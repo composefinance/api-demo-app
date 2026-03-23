@@ -543,12 +543,25 @@ const C = {
   webhook: '#A855F7',
 };
 
+// ─── Design tokens ───
+const T = {
+  fontSans: "'Inter', sans-serif",
+  fontMono: "'IBM Plex Mono', monospace",
+  radius: { sm: 6, md: 8, lg: 12, full: 9999 },
+  transition: 'all 0.15s ease',
+};
+
+// ─── Shared style objects ───
+const headingStyle = { fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: T.fontSans, letterSpacing: "-0.025em" };
+const labelStyle = { display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: T.fontMono, textTransform: "uppercase", letterSpacing: "0.06em" };
+const inputStyle = { width: "100%", padding: "10px 14px", background: C.bgApp, border: `1px solid ${C.borderLight}`, borderRadius: T.radius.md, color: C.text, fontSize: 13, fontFamily: T.fontSans, outline: "none", transition: T.transition };
+
 // ─── Utility components ───
 function JsonBlock({ data, title }) {
   return (
     <div style={{ marginTop: 8 }}>
       {title && (
-        <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 4, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 4, fontFamily: T.fontMono, textTransform: "uppercase", letterSpacing: "0.08em" }}>
           {title}
         </div>
       )}
@@ -563,7 +576,7 @@ function JsonBlock({ data, title }) {
           color: C.textBody,
           overflow: "auto",
           maxHeight: 320,
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: T.fontMono,
           margin: 0,
         }}
       >
@@ -600,8 +613,8 @@ function StatusBadge({ status }) {
         background: c.bg,
         color: c.color,
         border: `1px solid ${c.border}`,
-        fontFamily: "'IBM Plex Mono', monospace",
-        letterSpacing: "0.03em",
+        fontFamily: T.fontSans,
+        letterSpacing: "0.01em",
       }}
     >
       {status}
@@ -626,7 +639,7 @@ function CopyButton({ text }) {
         cursor: "pointer",
         padding: "3px 8px",
         fontSize: 11,
-        fontFamily: "'IBM Plex Mono', monospace",
+        fontFamily: T.fontMono,
         transition: "all 0.2s",
       }}
     >
@@ -640,7 +653,7 @@ function CreateCustomerPanel({ onExecute, executed }) {
   const [form, setForm] = useState({ name: "Marco Rossi", email: "marco.rossi@example.com", volume: "25000" });
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Create Customer</h2>
+      <h2 style={headingStyle}>Create Customer</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Register a new customer with their basic information to begin the onboarding process.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {[
@@ -649,7 +662,7 @@ function CreateCustomerPanel({ onExecute, executed }) {
           { label: "Expected Monthly Volume (EUR)", key: "volume", placeholder: "25000" },
         ].map((f) => (
           <div key={f.key}>
-            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <label style={labelStyle}>
               {f.label}
             </label>
             <input
@@ -665,7 +678,7 @@ function CreateCustomerPanel({ onExecute, executed }) {
                 borderRadius: 8,
                 color: C.textBody,
                 fontSize: 14,
-                fontFamily: "'Noto Serif', serif",
+                fontFamily: T.fontSans,
                 outline: "none",
                 boxSizing: "border-box",
                 opacity: executed ? 0.6 : 1,
@@ -692,10 +705,10 @@ function CreateCustomerPanel({ onExecute, executed }) {
 function KycPanel({ onExecute, executed }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Initiate KYC Verification</h2>
+      <h2 style={headingStyle}>Initiate KYC Verification</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Generate a verification link for the customer. They'll complete identity verification, liveness check, and proof of address.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 12, fontFamily: "'IBM Plex Mono', monospace" }}>VERIFICATION STEPS</div>
+        <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 12, fontFamily: T.fontMono }}>VERIFICATION STEPS</div>
         {["Identity Document (Passport, ID Card, etc.)", "Proof of Address (Utility Bill, Bank Statement)", "Questionnaire (auto-submitted via API)"].map((s, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 2 ? `1px solid ${C.border}` : "none" }}>
             <div style={{ width: 22, height: 22, borderRadius: "50%", background: executed ? C.successBg : C.bgDisabled, border: `1px solid ${executed ? C.successBorder : C.borderDisabled}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: executed ? C.success : C.textDisabled }}>
@@ -714,7 +727,7 @@ function KycPanel({ onExecute, executed }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
           <div style={{ padding: "12px 16px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 13 }}>
             <div style={{ color: C.accent, fontWeight: 600, marginBottom: 4 }}>WebSDK Link Generated</div>
-            <div style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", wordBreak: "break-all" }}>{KYC_RESPONSE.kycFlowLink}</div>
+            <div style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono, wordBreak: "break-all" }}>{KYC_RESPONSE.kycFlowLink}</div>
           </div>
           <div style={{ color: C.textMuted, fontSize: 12, lineHeight: 1.5 }}>
             {"\u21B3"} Redirect your customer to this link. They'll complete all verification steps in the browser. The link is valid for 1 week.
@@ -728,7 +741,7 @@ function KycPanel({ onExecute, executed }) {
 function VerifyPanel({ onExecute, executed, polling, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Check Verification Status</h2>
+      <h2 style={headingStyle}>Check Verification Status</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Poll the customer endpoint to check KYC progress. In production, use webhooks for real-time notifications.</p>
 
       {!executed && !polling && (
@@ -794,10 +807,10 @@ function VerifyPanel({ onExecute, executed, polling, isError }) {
 function WalletPanel({ onExecute, executed }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Setup Customer Wallet</h2>
+      <h2 style={headingStyle}>Setup Customer Wallet</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Register a USDC wallet address (Base network) where deposits will be automatically sent after fiat conversion.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <label style={labelStyle}>
           Wallet Address (Base {"\u00B7"} USDC)
         </label>
         <input
@@ -812,7 +825,7 @@ function WalletPanel({ onExecute, executed }) {
             borderRadius: 8,
             color: C.textBody,
             fontSize: 13,
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: T.fontMono,
             outline: "none",
             boxSizing: "border-box",
             opacity: executed ? 0.6 : 1,
@@ -853,10 +866,10 @@ function FeesPanel({ onExecute, executed }) {
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Configure Developer Fees</h2>
+      <h2 style={headingStyle}>Configure Developer Fees</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Earn revenue on every customer deposit. Set a spread fee that's automatically deducted and accumulated in your balance.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <label style={labelStyle}>
           Spread Fee (Basis Points)
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -874,7 +887,7 @@ function FeesPanel({ onExecute, executed }) {
               color: C.textBody,
               fontSize: 16,
               fontWeight: 700,
-              fontFamily: "'Noto Serif', serif",
+              fontFamily: T.fontSans,
               outline: "none",
               textAlign: "center",
               opacity: executed ? 0.6 : 1,
@@ -883,19 +896,19 @@ function FeesPanel({ onExecute, executed }) {
           <span style={{ color: C.textMuted, fontSize: 13 }}>BPS = {((parseInt(bps || 0)) / 100).toFixed(2)}%</span>
         </div>
         <div style={{ marginTop: 16, padding: 14, background: C.bgElevated, borderRadius: 8, border: `1px solid ${C.border}` }}>
-          <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 10, fontFamily: "'IBM Plex Mono', monospace" }}>EXAMPLE: {"\u20AC"}{amount.toLocaleString()} DEPOSIT</div>
+          <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 10, fontFamily: T.fontMono }}>EXAMPLE: {"\u20AC"}{amount.toLocaleString()} DEPOSIT</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
               <span style={{ color: C.textMuted }}>Gross USDC</span>
-              <span style={{ color: C.textBody, fontFamily: "'IBM Plex Mono', monospace" }}>{grossUsdc}</span>
+              <span style={{ color: C.textBody, fontFamily: T.fontMono }}>{grossUsdc}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
               <span style={{ color: C.warning }}>Your spread fee</span>
-              <span style={{ color: C.warning, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{"\u2212"}{spreadFee}</span>
+              <span style={{ color: C.warning, fontFamily: T.fontMono, fontWeight: 600 }}>{"\u2212"}{spreadFee}</span>
             </div>
             <div style={{ borderTop: `1px solid ${C.borderLight}`, paddingTop: 6, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
               <span style={{ color: C.textMuted }}>Customer receives</span>
-              <span style={{ color: C.success, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{netUsdc} USDC</span>
+              <span style={{ color: C.success, fontFamily: T.fontMono, fontWeight: 600 }}>{netUsdc} USDC</span>
             </div>
           </div>
         </div>
@@ -918,7 +931,7 @@ function FeesPanel({ onExecute, executed }) {
 function DepositPanel({ onExecute, executed }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Deposit Instructions</h2>
+      <h2 style={headingStyle}>Deposit Instructions</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Retrieve bank details your customer uses to deposit EUR. Funds are automatically converted to USDC.</p>
       {!executed && (
         <button onClick={onExecute} style={btnStyle}>
@@ -940,9 +953,9 @@ function DepositPanel({ onExecute, executed }) {
               { label: "Bank Country", value: DEPOSIT_DETAILS.bankCountry },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontWeight: f.highlight ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                  <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontWeight: f.highlight ? 700 : 400, fontFamily: T.fontMono }}>{f.value}</span>
                   <CopyButton text={f.value} />
                 </div>
               </div>
@@ -957,7 +970,7 @@ function DepositPanel({ onExecute, executed }) {
 function TransactionsPanel({ onExecute, executed, onSelectTxn }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Transaction History</h2>
+      <h2 style={headingStyle}>Transaction History</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>View all deposits and withdrawals for the customer. Click a transaction to view full details.</p>
       {!executed && (
         <button onClick={onExecute} style={btnStyle}>
@@ -972,7 +985,7 @@ function TransactionsPanel({ onExecute, executed, onSelectTxn }) {
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: C.successBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{"\u2193"}</div>
                 <div>
                   <div style={{ color: C.textBody, fontSize: 14, fontWeight: 600 }}>{tx.type}</div>
-                  <div style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{tx.id}</div>
+                  <div style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{tx.id}</div>
                 </div>
               </div>
               <StatusBadge status={tx.status} />
@@ -987,14 +1000,14 @@ function TransactionsPanel({ onExecute, executed, onSelectTxn }) {
                 { label: "Tx Hash", value: tx.txHash },
               ].map((f) => (
                 <div key={f.label} style={{ padding: "8px 12px", background: C.bgElevated, borderRadius: 6 }}>
-                  <div style={{ fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 3 }}>{f.label}</div>
-                  <div style={{ fontSize: 13, color: f.highlight ? C.warning : C.textBody, fontWeight: f.highlight ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</div>
+                  <div style={{ fontSize: 10, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 3 }}>{f.label}</div>
+                  <div style={{ fontSize: 13, color: f.highlight ? C.warning : C.textBody, fontWeight: f.highlight ? 700 : 400, fontFamily: T.fontMono }}>{f.value}</div>
                 </div>
               ))}
             </div>
             {onSelectTxn && (
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "flex-end" }}>
-                <span style={{ color: C.accent, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>View detail {"\u2192"}</span>
+                <span style={{ color: C.accent, fontSize: 11, fontFamily: T.fontMono }}>View detail {"\u2192"}</span>
               </div>
             )}
           </div>
@@ -1010,7 +1023,7 @@ function DocUploadPanel({ onExecute, executed, isError }) {
   const [fileDragging, setFileDragging] = useState(false);
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Upload Identity Document</h2>
+      <h2 style={headingStyle}>Upload Identity Document</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Submit a document via API as an alternative to the WebSDK KYC flow. Reviewed by the compliance team.</p>
       <div style={{ padding: "12px 16px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8, marginBottom: 16 }}>
         <div style={{ color: C.accent, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{"\u{1F4A1}"} API-Based KYC Alternative</div>
@@ -1018,8 +1031,8 @@ function DocUploadPanel({ onExecute, executed, isError }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <div>
-          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Document Type</label>
-          <select value={docType} onChange={(e) => setDocType(e.target.value)} disabled={executed} style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 14, fontFamily: "'Noto Serif', serif", outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1, cursor: executed ? "default" : "pointer" }}>
+          <label style={labelStyle}>Document Type</label>
+          <select value={docType} onChange={(e) => setDocType(e.target.value)} disabled={executed} style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 14, fontFamily: T.fontSans, outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1, cursor: executed ? "default" : "pointer" }}>
             <option value="PASSPORT">Passport</option>
             <option value="ID_CARD">ID Card</option>
             <option value="DRIVERS">Driver License</option>
@@ -1027,15 +1040,15 @@ function DocUploadPanel({ onExecute, executed, isError }) {
           </select>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Country (ISO 3166-1 alpha-3)</label>
-          <input value={country} onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 3))} disabled={executed} placeholder="GBR" style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 14, fontFamily: "'IBM Plex Mono', monospace", outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1 }} />
+          <label style={labelStyle}>Country (ISO 3166-1 alpha-3)</label>
+          <input value={country} onChange={(e) => setCountry(e.target.value.toUpperCase().slice(0, 3))} disabled={executed} placeholder="GBR" style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 14, fontFamily: T.fontMono, outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1 }} />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Document File (Simulated)</label>
+          <label style={labelStyle}>Document File (Simulated)</label>
           <div onDragOver={(e) => { e.preventDefault(); setFileDragging(true); }} onDragLeave={() => setFileDragging(false)} onDrop={(e) => { e.preventDefault(); setFileDragging(false); }} style={{ border: `2px dashed ${fileDragging ? C.accent : C.borderLight}`, borderRadius: 8, padding: "24px 16px", textAlign: "center", background: fileDragging ? C.accentBg : C.bgSurface, transition: "all 0.2s", opacity: executed ? 0.6 : 1 }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>{"\u{1F4C4}"}</div>
             <div style={{ color: C.textMuted, fontSize: 13 }}>{executed ? "passport_scan.jpg" : "Drop passport_scan.jpg here"}</div>
-            <div style={{ color: C.textDisabled, fontSize: 11, marginTop: 4, fontFamily: "'IBM Plex Mono', monospace" }}>{executed ? "42.3 KB \u00B7 JPEG" : "JPEG, PNG, PDF \u00B7 max 10 MB"}</div>
+            <div style={{ color: C.textDisabled, fontSize: 11, marginTop: 4, fontFamily: T.fontMono }}>{executed ? "42.3 KB \u00B7 JPEG" : "JPEG, PNG, PDF \u00B7 max 10 MB"}</div>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -1061,8 +1074,8 @@ function DocUploadPanel({ onExecute, executed, isError }) {
           </div>
           {[{ label: "Document Type", value: `${docType} / FRONT_SIDE` }, { label: "Country", value: country }, { label: "Review Triggered", value: "true" }].map((f) => (
             <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-              <span style={{ color: C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+              <span style={{ color: C.textBody, fontSize: 12, fontFamily: T.fontMono }}>{f.value}</span>
             </div>
           ))}
         </div>
@@ -1085,19 +1098,19 @@ function TxnDetailPanel({ onExecute, executed, isError }) {
   const tx = TXN_DETAIL_RESPONSE;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Transaction Detail</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Full detail for deposit <span style={{ color: C.accent, fontFamily: "'IBM Plex Mono', monospace" }}>{tx.id}</span>.</p>
+      <h2 style={headingStyle}>Transaction Detail</h2>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Full detail for deposit <span style={{ color: C.accent, fontFamily: T.fontMono }}>{tx.id}</span>.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>Fetch Transaction Detail {"\u2192"}</button>}
       {executed && !isError && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 12 }}>Status Timeline</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 12 }}>Status Timeline</div>
             <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
               {["PROCESSING", "COMPLETED"].map((stage, i) => (
                 <div key={stage} style={{ display: "flex", alignItems: "center", flex: i < 1 ? 1 : "none" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.successBg, border: `1px solid ${C.successBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: C.success, fontWeight: 700 }}>{"\u2713"}</div>
-                    <span style={{ fontSize: 10, color: C.success, fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap" }}>{stage}</span>
+                    <span style={{ fontSize: 10, color: C.success, fontFamily: T.fontMono, whiteSpace: "nowrap" }}>{stage}</span>
                   </div>
                   {i < 1 && <div style={{ flex: 1, height: 2, background: C.successBg, margin: "0 8px", marginBottom: 16 }} />}
                 </div>
@@ -1105,7 +1118,7 @@ function TxnDetailPanel({ onExecute, executed, isError }) {
             </div>
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 10 }}>Conversion</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 10 }}>Conversion</div>
             {[
               { label: "Source", value: `\u20AC${parseFloat(tx.sourceAmount).toLocaleString()} ${tx.sourceCurrency}` },
               { label: "Target", value: `${parseFloat(tx.targetAmount).toLocaleString()} ${tx.targetCurrency}` },
@@ -1114,48 +1127,48 @@ function TxnDetailPanel({ onExecute, executed, isError }) {
               { label: "Completed At", value: new Date(tx.completedAt).toLocaleString() },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                <span style={{ color: C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+                <span style={{ color: C.textBody, fontSize: 12, fontFamily: T.fontMono }}>{f.value}</span>
               </div>
             ))}
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 10 }}>Developer Fee Breakdown</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 10 }}>Developer Fee Breakdown</div>
             {[
               { label: "Spread Fee (bps)", value: String(tx.developerFee.developerSpreadFeeBps) },
               { label: "Fee Amount", value: `${tx.developerFee.amount} USDC`, highlight: true },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                <span style={{ color: f.highlight ? C.warning : C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", fontWeight: f.highlight ? 700 : 400 }}>{f.value}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+                <span style={{ color: f.highlight ? C.warning : C.textBody, fontSize: 12, fontFamily: T.fontMono, fontWeight: f.highlight ? 700 : 400 }}>{f.value}</span>
               </div>
             ))}
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 10 }}>Deposit Instructions</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 10 }}>Deposit Instructions</div>
             {[
               { label: "Account Type", value: tx.depositInstructions.accountType },
               { label: "Reference", value: tx.depositInstructions.reference, copy: true },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: f.copy ? C.accent : C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", fontWeight: f.copy ? 700 : 400 }}>{f.value}</span>
+                  <span style={{ color: f.copy ? C.accent : C.textBody, fontSize: 12, fontFamily: T.fontMono, fontWeight: f.copy ? 700 : 400 }}>{f.value}</span>
                   {f.copy && <CopyButton text={f.value} />}
                 </div>
               </div>
             ))}
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 10 }}>On-Chain</div>
+            <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 10 }}>On-Chain</div>
             {[
               { label: "Wallet Address", value: tx.walletAddress },
               { label: "Tx Hash", value: tx.txHash },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: C.accent, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value.length > 20 ? `${f.value.slice(0, 10)}...${f.value.slice(-6)}` : f.value}</span>
+                  <span style={{ color: C.accent, fontSize: 12, fontFamily: T.fontMono }}>{f.value.length > 20 ? `${f.value.slice(0, 10)}...${f.value.slice(-6)}` : f.value}</span>
                   <CopyButton text={f.value} />
                 </div>
               </div>
@@ -1180,7 +1193,7 @@ function TxnDetailPanel({ onExecute, executed, isError }) {
 function ListCustomersPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>List Customers</h2>
+      <h2 style={headingStyle}>List Customers</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Browse all customers in your organization before creating a new one.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>List Customers {"\u2192"}</button>}
       {executed && !isError && (
@@ -1189,10 +1202,10 @@ function ListCustomersPanel({ onExecute, executed, isError }) {
             <div key={c.customerId} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ color: C.textBody, fontSize: 14, fontWeight: 600 }}>{c.name}</div>
-                <div style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{c.email}</div>
-                <div style={{ color: C.textDisabled, fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", marginTop: 2 }}>{c.accountType} \u00B7 {c.customerId.slice(0, 8)}...</div>
+                <div style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{c.email}</div>
+                <div style={{ color: C.textDisabled, fontSize: 10, fontFamily: T.fontMono, marginTop: 2 }}>{c.accountType} \u00B7 {c.customerId.slice(0, 8)}...</div>
               </div>
-              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.bgElevated, color: C.textMuted, border: `1px solid ${C.borderLight}`, fontFamily: "'IBM Plex Mono', monospace" }}>{c.accountType}</span>
+              <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.bgElevated, color: C.textMuted, border: `1px solid ${C.borderLight}`, fontFamily: T.fontMono }}>{c.accountType}</span>
             </div>
           ))}
         </div>
@@ -1210,15 +1223,15 @@ function ListCustomersPanel({ onExecute, executed, isError }) {
 function KycSubmitPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Submit KYC for Review</h2>
+      <h2 style={headingStyle}>Submit KYC for Review</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Manually submit the uploaded documents for compliance review.</p>
       <div style={{ padding: "12px 16px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8, marginBottom: 16 }}>
         <div style={{ color: C.accent, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>{"\u{1F4A1}"} Manual Fallback</div>
         <div style={{ color: C.textMuted, fontSize: 12, lineHeight: 1.6 }}>Normally auto-triggered when all required documents are uploaded. Use this endpoint only if auto-submission fails. Maximum 4 attempts.</div>
       </div>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Customer ID</label>
-        <div style={{ color: C.accent, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>550e8400-e29b-41d4-a716-446655440001</div>
+        <label style={labelStyle}>Customer ID</label>
+        <div style={{ color: C.accent, fontSize: 13, fontFamily: T.fontMono }}>550e8400-e29b-41d4-a716-446655440001</div>
       </div>
       {!executed && <button onClick={onExecute} style={btnStyle}>Submit for Review {"\u2192"}</button>}
       {executed && !isError && (
@@ -1247,7 +1260,7 @@ function GetFeesPanel({ onExecute, executed, isError }) {
   const f = GET_CUSTOMER_FEES_RESPONSE;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Verify Fee Configuration</h2>
+      <h2 style={headingStyle}>Verify Fee Configuration</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Read back the per-customer developer fee configuration to confirm it was set correctly.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>Get Fee Config {"\u2192"}</button>}
       {executed && !isError && (
@@ -1258,8 +1271,8 @@ function GetFeesPanel({ onExecute, executed, isError }) {
             { label: "Updated At", value: new Date(f.updatedAt).toLocaleString() },
           ].map((r) => (
             <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{r.label}</span>
-              <span style={{ color: r.highlight ? C.warning : C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", fontWeight: r.highlight ? 700 : 400 }}>{r.value}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{r.label}</span>
+              <span style={{ color: r.highlight ? C.warning : C.textBody, fontSize: 12, fontFamily: T.fontMono, fontWeight: r.highlight ? 700 : 400 }}>{r.value}</span>
             </div>
           ))}
         </div>
@@ -1280,7 +1293,7 @@ function GetFeesPanel({ onExecute, executed, isError }) {
 function WdListBanksPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>List Withdrawal Banks</h2>
+      <h2 style={headingStyle}>List Withdrawal Banks</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>View all configured withdrawal banks for this customer. Only ACTIVE banks can be used for withdrawals.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>List Banks {"\u2192"}</button>}
       {executed && !isError && (
@@ -1289,12 +1302,12 @@ function WdListBanksPanel({ onExecute, executed, isError }) {
             <div key={b.id} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{b.beneficiaryName}</span>
-                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: "'IBM Plex Mono', monospace" }}>{b.status}</span>
+                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontMono }}>{b.status}</span>
               </div>
               {[{ label: "IBAN", value: b.iban }, { label: "BIC", value: b.bic }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }].map((f) => (
                 <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
+                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{f.value}</span>
                 </div>
               ))}
             </div>
@@ -1314,7 +1327,7 @@ function WdListBanksPanel({ onExecute, executed, isError }) {
 function VaListPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>List Virtual Accounts</h2>
+      <h2 style={headingStyle}>List Virtual Accounts</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>View all virtual bank accounts (IBANs) for the customer, including status and account details.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>List Accounts {"\u2192"}</button>}
       {executed && !isError && (
@@ -1322,13 +1335,13 @@ function VaListPanel({ onExecute, executed, isError }) {
           {VA_LIST_RESPONSE.map((va) => (
             <div key={va.virtualAccountId} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600, fontFamily: "'IBM Plex Mono', monospace" }}>{va.virtualAccountId}</span>
-                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: "'IBM Plex Mono', monospace" }}>{va.status}</span>
+                <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600, fontFamily: T.fontMono }}>{va.virtualAccountId}</span>
+                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontMono }}>{va.status}</span>
               </div>
               {[{ label: "IBAN", value: va.virtualAccount.iban }, { label: "BIC", value: va.virtualAccount.bic }, { label: "Account Name", value: va.virtualAccount.accountName }, { label: "Bank", value: va.virtualAccount.bankName }, { label: "Currency", value: va.currency }].map((f) => (
                 <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
+                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{f.value}</span>
                 </div>
               ))}
             </div>
@@ -1350,7 +1363,7 @@ function KycAddressPanel({ onExecute, executed, isError }) {
   const addr = KYC_ADDRESS_RESPONSE;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Verified Address</h2>
+      <h2 style={headingStyle}>Verified Address</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>After KYC approval, retrieve the customer's verified address from their identity documents.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>Get Verified Address {"\u2192"}</button>}
       {executed && !isError && (
@@ -1362,8 +1375,8 @@ function KycAddressPanel({ onExecute, executed, isError }) {
             { label: "Postal Code", value: addr.postalCode },
           ].map((f) => (
             <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-              <span style={{ color: C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+              <span style={{ color: C.textBody, fontSize: 12, fontFamily: T.fontMono }}>{f.value}</span>
             </div>
           ))}
         </div>
@@ -1385,7 +1398,7 @@ function KycAddressPanel({ onExecute, executed, isError }) {
 function OrgBalancesPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Organization Balances</h2>
+      <h2 style={headingStyle}>Organization Balances</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Check your organization's current balances across all supported currencies and chains.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>Get Balances {"\u2192"}</button>}
       {executed && !isError && (
@@ -1394,10 +1407,10 @@ function OrgBalancesPanel({ onExecute, executed, isError }) {
             <div key={i} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: C.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: C.accent, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace" }}>{b.currency}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: C.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: C.accent, fontWeight: 700, fontFamily: T.fontMono }}>{b.currency}</div>
                   <div>
                     <div style={{ color: C.textBody, fontSize: 14, fontWeight: 600 }}>{b.currency}</div>
-                    <div style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{b.chain}</div>
+                    <div style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{b.chain}</div>
                   </div>
                 </div>
               </div>
@@ -1406,8 +1419,8 @@ function OrgBalancesPanel({ onExecute, executed, isError }) {
                 { label: "Pending", value: `${parseFloat(b.pending).toLocaleString()} ${b.currency}` },
               ].map((f) => (
                 <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                  <span style={{ color: f.highlight ? C.success : C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", fontWeight: f.highlight ? 600 : 400 }}>{f.value}</span>
+                  <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+                  <span style={{ color: f.highlight ? C.success : C.textBody, fontSize: 13, fontFamily: T.fontMono, fontWeight: f.highlight ? 600 : 400 }}>{f.value}</span>
                 </div>
               ))}
             </div>
@@ -1428,10 +1441,10 @@ function OrgBalancesPanel({ onExecute, executed, isError }) {
 function VaCreatePanel({ onExecute, executed }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Create Virtual Account</h2>
+      <h2 style={headingStyle}>Create Virtual Account</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Request a dedicated IBAN for this customer. The IBAN is assigned asynchronously — listen for the virtual_account.approved webhook.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <label style={labelStyle}>
           Currency
         </label>
         <input
@@ -1445,7 +1458,7 @@ function VaCreatePanel({ onExecute, executed }) {
             borderRadius: 8,
             color: C.textBody,
             fontSize: 14,
-            fontFamily: "'Noto Serif', serif",
+            fontFamily: T.fontSans,
             outline: "none",
             boxSizing: "border-box",
           }}
@@ -1469,7 +1482,7 @@ function VaCreatePanel({ onExecute, executed }) {
 function VaPollPanel({ onExecute, executed, polling, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>IBAN Assigned</h2>
+      <h2 style={headingStyle}>IBAN Assigned</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>The provider has processed the request. Poll the endpoint or receive the virtual_account.approved webhook.</p>
 
       {!executed && !polling && (
@@ -1496,9 +1509,9 @@ function VaPollPanel({ onExecute, executed, polling, isError }) {
             { label: "Bank Address", value: VA_RESPONSE_APPROVED.virtualAccount.bankAddress },
           ].map((f) => (
             <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontWeight: f.highlight ? 700 : 400, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontWeight: f.highlight ? 700 : 400, fontFamily: T.fontMono }}>{f.value}</span>
                 <CopyButton text={f.value} />
               </div>
             </div>
@@ -1522,7 +1535,7 @@ function VaPollPanel({ onExecute, executed, polling, isError }) {
 function VaDepositPanel({ onExecute, executed }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Simulate Deposit</h2>
+      <h2 style={headingStyle}>Simulate Deposit</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Your customer transfers EUR to their dedicated IBAN. Compose detects the deposit, converts to USDC, and sends it to their wallet.</p>
       <div style={{ padding: "10px 14px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8, marginBottom: 16 }}>
         <div style={{ color: C.accent, fontSize: 12, lineHeight: 1.5 }}>
@@ -1557,7 +1570,7 @@ function WdBankPanel({ onExecute, executed, isError }) {
   });
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Add Withdrawal Bank</h2>
+      <h2 style={headingStyle}>Add Withdrawal Bank</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Register a EUR bank account for the customer. Individual accounts are auto-approved.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {[
@@ -1568,7 +1581,7 @@ function WdBankPanel({ onExecute, executed, isError }) {
           { label: "City", key: "city", placeholder: "Berlin" },
         ].map((f) => (
           <div key={f.key}>
-            <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            <label style={labelStyle}>
               {f.label}
             </label>
             <input
@@ -1584,7 +1597,7 @@ function WdBankPanel({ onExecute, executed, isError }) {
                 borderRadius: 8,
                 color: C.textBody,
                 fontSize: 14,
-                fontFamily: "'Noto Serif', serif",
+                fontFamily: T.fontSans,
                 outline: "none",
                 boxSizing: "border-box",
                 opacity: executed ? 0.6 : 1,
@@ -1619,7 +1632,7 @@ function WdAllowancePanel({ onExecute, executed }) {
   const spentPct = (2500 / 10000) * 100;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Check Withdrawal Allowance</h2>
+      <h2 style={headingStyle}>Check Withdrawal Allowance</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Before creating a withdrawal, verify your available allowance. Limits are configured in your Compose dashboard.</p>
       {!executed && (
         <button onClick={onExecute} style={btnStyle}>
@@ -1629,8 +1642,8 @@ function WdAllowancePanel({ onExecute, executed }) {
       {executed && (
         <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginTop: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Daily Limit</span>
-            <span style={{ color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>10,000 USDC</span>
+            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Daily Limit</span>
+            <span style={{ color: C.textBody, fontSize: 13, fontFamily: T.fontMono }}>10,000 USDC</span>
           </div>
           <div style={{ padding: "14px 0" }}>
             <div style={{ background: C.borderLight, borderRadius: 6, height: 8, overflow: "hidden" }}>
@@ -1638,16 +1651,16 @@ function WdAllowancePanel({ onExecute, executed }) {
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Spent</span>
-            <span style={{ color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>2,500 USDC</span>
+            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Spent</span>
+            <span style={{ color: C.textBody, fontSize: 13, fontFamily: T.fontMono }}>2,500 USDC</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Available</span>
-            <span style={{ color: C.success, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>7,500 USDC</span>
+            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Available</span>
+            <span style={{ color: C.success, fontSize: 13, fontFamily: T.fontMono }}>7,500 USDC</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Resets</span>
-            <span style={{ color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>Every 24h</span>
+            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Resets</span>
+            <span style={{ color: C.textBody, fontSize: 13, fontFamily: T.fontMono }}>Every 24h</span>
           </div>
         </div>
       )}
@@ -1658,10 +1671,10 @@ function WdAllowancePanel({ onExecute, executed }) {
 function WdCreatePanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Create Withdrawal</h2>
+      <h2 style={headingStyle}>Create Withdrawal</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Convert USDC to EUR and send to the customer's bank account.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <label style={labelStyle}>
           Source Amount
         </label>
         <input
@@ -1675,7 +1688,7 @@ function WdCreatePanel({ onExecute, executed, isError }) {
             borderRadius: 8,
             color: C.textBody,
             fontSize: 14,
-            fontFamily: "'Noto Serif', serif",
+            fontFamily: T.fontSans,
             outline: "none",
             boxSizing: "border-box",
             marginBottom: 14,
@@ -1684,15 +1697,15 @@ function WdCreatePanel({ onExecute, executed, isError }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
             <span style={{ color: C.textMuted }}>Source</span>
-            <span style={{ color: C.textBody, fontFamily: "'IBM Plex Mono', monospace" }}>USDC</span>
+            <span style={{ color: C.textBody, fontFamily: T.fontMono }}>USDC</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
             <span style={{ color: C.textMuted }}>Target</span>
-            <span style={{ color: C.textBody, fontFamily: "'IBM Plex Mono', monospace" }}>EUR</span>
+            <span style={{ color: C.textBody, fontFamily: T.fontMono }}>EUR</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
             <span style={{ color: C.textMuted }}>Bank</span>
-            <span style={{ color: C.textBody, fontFamily: "'IBM Plex Mono', monospace" }}>DE89...3000 (MARCO ROSSI)</span>
+            <span style={{ color: C.textBody, fontFamily: T.fontMono }}>DE89...3000 (MARCO ROSSI)</span>
           </div>
         </div>
         <div style={{ marginTop: 14, padding: "10px 14px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8 }}>
@@ -1715,8 +1728,8 @@ function WdCreatePanel({ onExecute, executed, isError }) {
             { label: "Fee", value: "\u20AC2.50" },
           ].map((f) => (
             <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-              <span style={{ color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+              <span style={{ color: C.textBody, fontSize: 13, fontFamily: T.fontMono }}>{f.value}</span>
             </div>
           ))}
         </div>
@@ -1737,7 +1750,7 @@ function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Withdrawal Status</h2>
+      <h2 style={headingStyle}>Withdrawal Status</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Track the withdrawal as it progresses. In production, listen for withdrawal.status_changed webhooks.</p>
 
       {!executed && !polling && (
@@ -1812,16 +1825,16 @@ function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError
 function VerifyAddressPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Verify Wallet Address</h2>
+      <h2 style={headingStyle}>Verify Wallet Address</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Validate the customer's wallet address before accepting deposits. Checks format, contract detection, and Safe wallet identification.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <label style={labelStyle}>
           Address to Verify
         </label>
         <input
           value="0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68"
           readOnly
-          style={{ width: "100%", padding: "10px 14px", background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", outline: "none", boxSizing: "border-box" }}
+          style={{ width: "100%", padding: "10px 14px", background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 13, fontFamily: T.fontMono, outline: "none", boxSizing: "border-box" }}
         />
         <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
           <div style={{ fontSize: 11, color: C.textMuted }}><span style={{ color: C.accent }}>Chain:</span> Base</div>
@@ -1881,7 +1894,7 @@ function RevBalancePanel({ onExecute, executed, isError }) {
   const bal = isError ? DEV_FEE_NO_BALANCE : DEV_FEE_BALANCE;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Developer Fee Balance</h2>
+      <h2 style={headingStyle}>Developer Fee Balance</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Check your accumulated developer fees from customer deposits. Fees are earned from the spread you configured.</p>
       {!executed && (
         <button onClick={onExecute} style={btnStyle}>
@@ -1890,8 +1903,8 @@ function RevBalancePanel({ onExecute, executed, isError }) {
       )}
       {executed && (
         <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 24, marginTop: 16 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", marginBottom: 8 }}>Available Balance</div>
-          <div style={{ fontSize: 36, fontWeight: 700, color: isError ? C.textDisabled : C.success, fontFamily: "'Noto Serif', serif", marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 8 }}>Available Balance</div>
+          <div style={{ fontSize: 36, fontWeight: 700, color: isError ? C.textDisabled : C.success, fontFamily: T.fontSans, marginBottom: 16 }}>
             {isError ? "$0.00" : "$1,250.50"} <span style={{ fontSize: 16, color: C.textMuted, fontWeight: 500 }}>USDC</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1902,8 +1915,8 @@ function RevBalancePanel({ onExecute, executed, isError }) {
               { label: "Currency", value: "USDC (Base)" },
             ].map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                <span style={{ color: f.highlight ? C.success : C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", fontWeight: f.highlight ? 600 : 400 }}>{f.value}</span>
+                <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+                <span style={{ color: f.highlight ? C.success : C.textBody, fontSize: 13, fontFamily: T.fontMono, fontWeight: f.highlight ? 600 : 400 }}>{f.value}</span>
               </div>
             ))}
           </div>
@@ -1921,16 +1934,16 @@ function RevBalancePanel({ onExecute, executed, isError }) {
 function RevClaimPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Claim Developer Fees</h2>
+      <h2 style={headingStyle}>Claim Developer Fees</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Initiate a transfer of your accumulated developer fees to your organization's wallet.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
-          <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Amount</span>
-          <span style={{ color: C.success, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>1,250.50 USDC</span>
+          <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Amount</span>
+          <span style={{ color: C.success, fontSize: 13, fontFamily: T.fontMono, fontWeight: 600 }}>1,250.50 USDC</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0" }}>
-          <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>Destination</span>
-          <span style={{ color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>Org Wallet (Base)</span>
+          <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>Destination</span>
+          <span style={{ color: C.textBody, fontSize: 13, fontFamily: T.fontMono }}>Org Wallet (Base)</span>
         </div>
       </div>
       {!executed && (
@@ -1962,7 +1975,7 @@ function RevConfirmPanel({ onExecute, executed, polling, claimStatus }) {
   const currentIdx = stages.indexOf(claimStatus);
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Transfer Confirmation</h2>
+      <h2 style={headingStyle}>Transfer Confirmation</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Track the fee transfer to your organization wallet.</p>
       {!executed && !polling && (
         <button onClick={onExecute} style={btnStyle}>
@@ -2014,7 +2027,7 @@ function RevConfirmPanel({ onExecute, executed, polling, claimStatus }) {
 function WmListPanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>List Customer Wallets</h2>
+      <h2 style={headingStyle}>List Customer Wallets</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Retrieve all registered deposit wallets for the customer. Each wallet has a blockchain address for a specific chain and token.</p>
       {!executed && <button onClick={onExecute} style={btnStyle}>List Wallets {"\u2192"}</button>}
       {executed && !isError && (
@@ -2022,13 +2035,13 @@ function WmListPanel({ onExecute, executed, isError }) {
           {WALLET_LIST_RESPONSE.wallets.map((w) => (
             <div key={w.id} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600, fontFamily: "'IBM Plex Mono', monospace" }}>{w.id}</span>
-                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: w.enabled ? C.successBg : C.bgDisabled, color: w.enabled ? C.success : C.textDisabled, border: `1px solid ${w.enabled ? C.successBorder : C.borderDisabled}`, fontFamily: "'IBM Plex Mono', monospace" }}>{w.enabled ? "ENABLED" : "DISABLED"}</span>
+                <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600, fontFamily: T.fontMono }}>{w.id}</span>
+                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: w.enabled ? C.successBg : C.bgDisabled, color: w.enabled ? C.success : C.textDisabled, border: `1px solid ${w.enabled ? C.successBorder : C.borderDisabled}`, fontFamily: T.fontMono }}>{w.enabled ? "ENABLED" : "DISABLED"}</span>
               </div>
               {[{ label: "Address", value: `${w.address.slice(0, 10)}...${w.address.slice(-6)}` }, { label: "Chain", value: w.chain }, { label: "Token", value: w.currency.toUpperCase() }].map((f) => (
                 <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
+                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{f.value}</span>
                 </div>
               ))}
             </div>
@@ -2049,19 +2062,19 @@ function WmGetPanel({ onExecute, executed, isError }) {
   const w = WALLET_SINGLE_RESPONSE;
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Get Wallet Detail</h2>
+      <h2 style={headingStyle}>Get Wallet Detail</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Retrieve full detail for a specific wallet by its ID.</p>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16, marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Wallet ID</label>
-        <div style={{ color: C.accent, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace" }}>wallet_abc123</div>
+        <label style={labelStyle}>Wallet ID</label>
+        <div style={{ color: C.accent, fontSize: 13, fontFamily: T.fontMono }}>wallet_abc123</div>
       </div>
       {!executed && <button onClick={onExecute} style={btnStyle}>Get Wallet {"\u2192"}</button>}
       {executed && !isError && (
         <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
           {[{ label: "ID", value: w.id }, { label: "Address", value: w.address }, { label: "Chain", value: w.chain }, { label: "Currency", value: w.currency.toUpperCase() }, { label: "Enabled", value: String(w.enabled) }, { label: "Created At", value: new Date(w.createdAt).toLocaleString() }].map((f) => (
             <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-              <span style={{ color: C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", maxWidth: 220, textAlign: "right", wordBreak: "break-all" }}>{f.value}</span>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+              <span style={{ color: C.textBody, fontSize: 12, fontFamily: T.fontMono, maxWidth: 220, textAlign: "right", wordBreak: "break-all" }}>{f.value}</span>
             </div>
           ))}
         </div>
@@ -2083,16 +2096,16 @@ function WmUpdatePanel({ onExecute, executed, isError }) {
   const [newAddress, setNewAddress] = useState("0xNewAddr4B52e8400e29b41d4a716446655440099");
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Update Wallet Address</h2>
+      <h2 style={headingStyle}>Update Wallet Address</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Update the blockchain address on an existing wallet. The wallet ID remains the same.</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
         <div>
-          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>Wallet ID</label>
-          <input value="wallet_abc123" readOnly style={{ width: "100%", padding: "10px 14px", background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textMuted, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", outline: "none", boxSizing: "border-box" }} />
+          <label style={labelStyle}>Wallet ID</label>
+          <input value="wallet_abc123" readOnly style={{ width: "100%", padding: "10px 14px", background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textMuted, fontSize: 13, fontFamily: T.fontMono, outline: "none", boxSizing: "border-box" }} />
         </div>
         <div>
-          <label style={{ display: "block", fontSize: 11, color: C.textMuted, marginBottom: 5, fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase", letterSpacing: "0.06em" }}>New Address</label>
-          <input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} disabled={executed} style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 13, fontFamily: "'IBM Plex Mono', monospace", outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1 }} />
+          <label style={labelStyle}>New Address</label>
+          <input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} disabled={executed} style={{ width: "100%", padding: "10px 14px", background: executed ? C.bgElevated : C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 8, color: C.textBody, fontSize: 13, fontFamily: T.fontMono, outline: "none", boxSizing: "border-box", opacity: executed ? 0.6 : 1 }} />
         </div>
       </div>
       {!executed && <button onClick={() => onExecute({ newAddress })} style={btnStyle}>Update Address {"\u2192"}</button>}
@@ -2118,7 +2131,7 @@ function WmUpdatePanel({ onExecute, executed, isError }) {
 function WmDeletePanel({ onExecute, executed, isError }) {
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: "0 0 6px 0", fontFamily: "'Noto Serif', serif" }}>Delete Wallet</h2>
+      <h2 style={headingStyle}>Delete Wallet</h2>
       <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Permanently remove a deposit wallet from the customer. This action cannot be undone.</p>
       <div style={{ padding: "10px 14px", background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8, marginBottom: 16 }}>
         <div style={{ color: C.warning, fontSize: 12, lineHeight: 1.5 }}>{"\u26A0"} Deleting a wallet will prevent new deposits to this address. Ensure no pending deposits are in-flight.</div>
@@ -2126,8 +2139,8 @@ function WmDeletePanel({ onExecute, executed, isError }) {
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16, marginBottom: 16 }}>
         {[{ label: "Wallet ID", value: "wallet_abc123" }, { label: "Chain", value: "base" }, { label: "Token", value: "USDC" }].map((f) => (
           <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.label}</span>
-            <span style={{ color: C.textBody, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+            <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+            <span style={{ color: C.textBody, fontSize: 12, fontFamily: T.fontMono }}>{f.value}</span>
           </div>
         ))}
       </div>
@@ -2162,7 +2175,7 @@ function SequenceDiagram({ steps, executedSteps, currentStep, flowErrors }) {
       {/* Actor headers */}
       <div style={{ display: "flex", marginBottom: 8 }}>
         {ACTOR_LABELS.map((label, i) => (
-          <div key={i} style={{ width: `${colWidth}%`, textAlign: "center", fontSize: 10, color: C.textMuted, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, textTransform: "uppercase" }}>
+          <div key={i} style={{ width: `${colWidth}%`, textAlign: "center", fontSize: 10, color: C.textMuted, fontFamily: T.fontMono, fontWeight: 600, textTransform: "uppercase" }}>
             {label}
           </div>
         ))}
@@ -2174,7 +2187,7 @@ function SequenceDiagram({ steps, executedSteps, currentStep, flowErrors }) {
         const isError = flowErrors?.has(step.id);
         return (
           <div key={step.id} style={{ padding: "4px 0", background: isCurrent ? "rgba(88, 166, 255, 0.05)" : "transparent", borderRadius: 4, animation: isCurrent ? "pulse 2s ease-in-out infinite" : "none" }}>
-            <div style={{ fontSize: 9, color: C.textDisabled, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 2, paddingLeft: 4 }}>{step.label}</div>
+            <div style={{ fontSize: 9, color: C.textDisabled, fontFamily: T.fontMono, marginBottom: 2, paddingLeft: 4 }}>{step.label}</div>
             {actors.map((arrow, ai) => {
               const fromPct = arrow.from * colWidth + colWidth / 2;
               const toPct = arrow.to * colWidth + colWidth / 2;
@@ -2202,7 +2215,7 @@ function SequenceDiagram({ steps, executedSteps, currentStep, flowErrors }) {
                   {/* Label */}
                   <div style={{
                     position: "absolute", top: -1, left: `${(fromPct + toPct) / 2}%`, transform: "translateX(-50%)",
-                    fontSize: 8, color, fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap",
+                    fontSize: 8, color, fontFamily: T.fontMono, whiteSpace: "nowrap",
                     background: C.bgSurface, padding: "0 3px",
                   }}>
                     {arrow.label}
@@ -2246,7 +2259,7 @@ function KeyboardShortcutsOverlay({ onClose }) {
         style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 12, padding: 28, maxWidth: 420, width: "90%" }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 id="shortcuts-title" style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0, fontFamily: "'Noto Serif', serif" }}>Keyboard Shortcuts</h3>
+          <h3 id="shortcuts-title" style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0, fontFamily: T.fontSans }}>Keyboard Shortcuts</h3>
           <button ref={closeButtonRef} onClick={onClose} aria-label="Close keyboard shortcuts" style={{ background: "none", border: "none", color: C.textMuted, fontSize: 18, cursor: "pointer", padding: 0 }}>{"\u2715"}</button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -2254,7 +2267,7 @@ function KeyboardShortcutsOverlay({ onClose }) {
             <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
               <span style={{
                 padding: "3px 8px", background: C.bgSurface, border: `1px solid ${C.borderLight}`, borderRadius: 4,
-                color: C.textBody, fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, whiteSpace: "nowrap",
+                color: C.textBody, fontSize: 11, fontFamily: T.fontMono, fontWeight: 600, whiteSpace: "nowrap",
               }}>{s.key}</span>
               <span style={{ color: C.textMuted, fontSize: 12 }}>{s.desc}</span>
             </div>
@@ -2332,7 +2345,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
-              fontFamily: "'Noto Serif', serif",
+              fontFamily: T.fontSans,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -2349,7 +2362,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
                   fontSize: 10,
                   padding: "1px 7px",
                   borderRadius: 100,
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: T.fontMono,
                 }}
               >
                 {t.count}
@@ -2370,7 +2383,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
                   fontWeight: 700,
                   padding: "1px 5px",
                   borderRadius: 100,
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: T.fontMono,
                   animation: "pulse 1.5s ease-in-out infinite",
                   minWidth: 14,
                   textAlign: "center",
@@ -2393,7 +2406,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
               fontSize: 11,
               cursor: "pointer",
               padding: "3px 8px",
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: T.fontMono,
               marginRight: 8,
               whiteSpace: "nowrap",
               flexShrink: 0,
@@ -2449,7 +2462,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
                         borderRadius: 4,
                         fontSize: 10,
                         fontWeight: 700,
-                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontFamily: T.fontMono,
                         background: call.method === "GET" ? C.successBg : call.method === "PATCH" ? C.warningBg : call.method === "DELETE" ? C.errorBg : C.accentBg,
                         color: call.method === "GET" ? C.success : call.method === "PATCH" ? C.warning : call.method === "DELETE" ? C.error : C.accent,
                         flexShrink: 0,
@@ -2457,11 +2470,11 @@ function ApiPanel({ calls, webhooks, onClear }) {
                     >
                       {call.method}
                     </span>
-                    <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{call.path}</span>
+                    <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: T.fontMono, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{call.path}</span>
                     <span
                       style={{
                         fontSize: 10,
-                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontFamily: T.fontMono,
                         padding: "2px 6px",
                         borderRadius: 4,
                         flexShrink: 0,
@@ -2516,9 +2529,9 @@ function ApiPanel({ calls, webhooks, onClear }) {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 10, padding: "2px 8px", background: "#2d1b4e", color: "#d2a8ff", borderRadius: 4, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>WEBHOOK</span>
-                  <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600 }}>{wh.event_type}</span>
-                  <span style={{ color: C.textDisabled, fontSize: 10, marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <span style={{ fontSize: 10, padding: "2px 8px", background: "#2d1b4e", color: "#d2a8ff", borderRadius: 4, fontFamily: T.fontMono, fontWeight: 600 }}>WEBHOOK</span>
+                  <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: T.fontMono, fontWeight: 600 }}>{wh.event_type}</span>
+                  <span style={{ color: C.textDisabled, fontSize: 10, marginLeft: "auto", fontFamily: T.fontMono }}>
                     {new Date(wh.created_at).toLocaleTimeString()}
                   </span>
                 </div>
@@ -2555,7 +2568,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
                     fontSize: 11,
                     fontWeight: 600,
                     cursor: "pointer",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: T.fontMono,
                   }}
                 >
                   {lang.label}
@@ -2578,14 +2591,14 @@ function ApiPanel({ calls, webhooks, onClear }) {
                         borderRadius: 4,
                         fontSize: 10,
                         fontWeight: 700,
-                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontFamily: T.fontMono,
                         background: call.method === "GET" ? C.successBg : call.method === "PATCH" ? C.warningBg : call.method === "DELETE" ? C.errorBg : C.accentBg,
                         color: call.method === "GET" ? C.success : call.method === "PATCH" ? C.warning : call.method === "DELETE" ? C.error : C.accent,
                       }}
                     >
                       {call.method}
                     </span>
-                    <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: "'IBM Plex Mono', monospace" }}>{call.path}</span>
+                    <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: T.fontMono }}>{call.path}</span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <pre
@@ -2599,7 +2612,7 @@ function ApiPanel({ calls, webhooks, onClear }) {
                         color: C.textBody,
                         overflow: "auto",
                         maxHeight: 320,
-                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontFamily: T.fontMono,
                         margin: 0,
                       }}
                     >
@@ -2625,14 +2638,15 @@ const btnStyle = {
   padding: "12px 24px",
   background: C.ctaBg,
   border: `1px solid ${C.ctaBorder}`,
-  borderRadius: 12,
+  borderRadius: T.radius.md,
   color: C.ctaText,
   fontSize: 14,
   fontWeight: 600,
   cursor: "pointer",
-  fontFamily: "'Noto Serif', serif",
+  fontFamily: T.fontSans,
+  letterSpacing: "-0.01em",
   width: "100%",
-  transition: "all 0.15s",
+  transition: T.transition,
 };
 
 // ─── Main App ───
@@ -3406,7 +3420,7 @@ export default function ComposeDemo() {
         minHeight: "100vh",
         background: C.bgApp,
         color: C.textBody,
-        fontFamily: "'Noto Serif', serif",
+        fontFamily: T.fontSans,
         display: "flex",
         flexDirection: "column",
       }}
@@ -3432,7 +3446,7 @@ export default function ComposeDemo() {
       <div style={{ borderBottom: `1px solid ${C.border}`, padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img src="/logo-white.png" alt="Compose Finance" style={{ height: 24, width: "auto" }} />
-          <span style={{ fontSize: 11, color: C.textMuted, padding: "2px 8px", background: C.bgElevated, borderRadius: 4, border: `1px solid ${C.border}`, fontFamily: "'IBM Plex Mono', monospace" }}>
+          <span style={{ fontSize: 11, color: C.textMuted, padding: "2px 8px", background: C.bgElevated, borderRadius: 4, border: `1px solid ${C.border}`, fontFamily: T.fontMono }}>
             API Demo
           </span>
         </div>
@@ -3458,7 +3472,7 @@ export default function ComposeDemo() {
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
-              fontFamily: "'Noto Serif', serif",
+              fontFamily: T.fontSans,
               display: "flex",
               alignItems: "center",
               gap: 6,
@@ -3471,7 +3485,7 @@ export default function ComposeDemo() {
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {/* Feature 7: Error Mode toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: errorMode ? C.error : C.textMuted, fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500 }}>Error Mode</span>
+            <span style={{ fontSize: 12, color: errorMode ? C.error : C.textMuted, fontFamily: T.fontMono, fontWeight: 500 }}>Error Mode</span>
             <div
               role="switch"
               aria-checked={errorMode}
@@ -3508,9 +3522,9 @@ export default function ComposeDemo() {
           <button
             onClick={() => setShowShortcuts(!showShortcuts)}
             aria-label="Keyboard shortcuts"
-            style={{ width: 24, height: 24, borderRadius: "50%", background: "none", border: `1px solid ${C.borderLight}`, color: C.textMuted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", padding: 0 }}
+            style={{ width: 24, height: 24, borderRadius: "50%", background: "none", border: `1px solid ${C.borderLight}`, color: C.textMuted, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.fontMono, padding: 0 }}
           >?</button>
-          <div style={{ fontSize: 12, color: C.textDisabled, fontFamily: "'IBM Plex Mono', monospace" }}>v2.0.0</div>
+          <div style={{ fontSize: 12, color: C.textDisabled, fontFamily: T.fontMono }}>v2.0.0</div>
         </div>
       </div>
 
@@ -3547,7 +3561,7 @@ export default function ComposeDemo() {
                 fontSize: 13,
                 fontWeight: isActive ? 700 : 500,
                 cursor: "pointer",
-                fontFamily: "'Noto Serif', serif",
+                fontFamily: T.fontSans,
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
@@ -3580,7 +3594,7 @@ export default function ComposeDemo() {
                 fontSize: 12,
                 fontWeight: active ? 700 : 500,
                 cursor: canClick ? "pointer" : "default",
-                fontFamily: "'Noto Serif', serif",
+                fontFamily: T.fontSans,
                 whiteSpace: "nowrap",
                 display: "flex",
                 alignItems: "center",
@@ -3623,7 +3637,7 @@ export default function ComposeDemo() {
                 fontSize: 11,
                 fontWeight: 500,
                 cursor: "pointer",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: T.fontMono,
                 whiteSpace: "nowrap",
               }}
             >
@@ -3640,7 +3654,7 @@ export default function ComposeDemo() {
                 fontSize: 11,
                 fontWeight: 500,
                 cursor: "pointer",
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: T.fontMono,
                 whiteSpace: "nowrap",
               }}
             >
@@ -3660,7 +3674,7 @@ export default function ComposeDemo() {
         {/* Left: Customer experience */}
         <div style={{ flex: 1, padding: 24, overflow: "auto", borderRight: `1px solid ${C.border}` }}>
           <div style={{ maxWidth: 560 }}>
-            <div style={{ fontSize: 10, color: C.accent, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <div style={{ fontSize: 10, color: C.accent, fontFamily: T.fontMono, marginBottom: 16, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Step {currentStep + 1} of {steps.length} — {steps[currentStep].endpoint}
             </div>
             {renderPanel()}
@@ -3668,7 +3682,7 @@ export default function ComposeDemo() {
               <button
                 onClick={() => canGoBack && setCurrentStep(currentStep - 1)}
                 disabled={!canGoBack}
-                style={{ padding: "8px 16px", background: "none", border: `1px solid ${C.borderLight}`, borderRadius: 6, color: canGoBack ? C.textSecondary : C.borderLight, fontSize: 13, cursor: canGoBack ? "pointer" : "default", fontFamily: "'Noto Serif', serif" }}
+                style={{ padding: "8px 16px", background: "none", border: `1px solid ${C.borderLight}`, borderRadius: 6, color: canGoBack ? C.textSecondary : C.borderLight, fontSize: 13, cursor: canGoBack ? "pointer" : "default", fontFamily: T.fontSans }}
               >
                 {"\u2190"} Back
               </button>
@@ -3683,7 +3697,7 @@ export default function ComposeDemo() {
                   color: canAdvance && currentStep < steps.length - 1 ? C.ctaText : C.borderLight,
                   fontSize: 13,
                   cursor: canAdvance && currentStep < steps.length - 1 ? "pointer" : "default",
-                  fontFamily: "'Noto Serif', serif",
+                  fontFamily: T.fontSans,
                   fontWeight: 600,
                 }}
               >
