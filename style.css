@@ -8,4 +8,10 @@ html, body, #root {
   height: 100%;
   margin: 0;
   background: #0A0A0A;
+  font-family: 'Inter', sans-serif;
+}
+
+input:focus-visible, button:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
 }
