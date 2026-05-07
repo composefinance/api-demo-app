@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Simulated API data based on actual OpenAPI spec ───
 // Webhook events not demonstrated in this demo (no matching flow):
-// - customer.updated: No flow modifies customer-level fields (name, email, etc.)
 // - customer.enabled / customer.disabled: No enable/disable customer lifecycle flows
 const DEMO_CUSTOMER = {
   customerId: "550e8400-e29b-41d4-a716-446655440001",
@@ -111,8 +110,19 @@ const GET_CUSTOMER_FEES_RESPONSE = { customerId: "550e8400-e29b-41d4-a716-446655
 const GET_CUSTOMER_FEES_NOT_FOUND = { error: "Customer not found" };
 
 // ─── Feature: List Banks data ───
+const LINKED_WALLET = {
+  id: "wallet_abc123",
+  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+  currency: "usdc",
+  chain: "base",
+  enabled: true,
+  createdAt: "2026-02-18T10:30:05.000Z",
+  updatedAt: "2026-02-18T10:30:05.000Z",
+  instructions: "Send USDC to this address to automatically receive funds in your bank account. Minimum: 5 USDC.",
+};
 const WITHDRAWAL_BANKS_LIST = [
-  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", iban: "DE89370400440532013000", bic: "COBADEFFXXX", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [] },
+  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", iban: "DE89370400440532013000", bic: "COBADEFFXXX", addressLine1: "Friedrichstraße 123", city: "Berlin", country: "DE", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_u7s6r5q4p3", beneficiaryName: "MARCO ROSSI", accountNumber: "214033031443", routingNumber: "101019644", addressLine1: "350 5th Ave", city: "New York", country: "US", currency: "USD", status: "ACTIVE", createdAt: "2026-03-04T09:15:00.000Z", wallets: [LINKED_WALLET] },
 ];
 const WITHDRAWAL_BANKS_EMPTY = [];
 
@@ -135,6 +145,23 @@ const DEPOSIT_DETAILS = {
   bankCountry: "Luxembourg",
   depositInstructions: "Transfer EUR from your bank using the reference and bank details below.",
   warningText: "Include your unique reference in the transfer details",
+  thirdPartyEnabled: false,
+  depositModel: "reference",
+};
+
+const DEPOSIT_DETAILS_USD = {
+  customerId: "550e8400-e29b-41d4-a716-446655440001",
+  currency: "usd",
+  reference: "A7B3C9D2E1",
+  accountName: "Compose Finance Inc.",
+  accountAddress: "350 5th Ave, New York, NY 10118, United States",
+  accountNumber: "214033031443",
+  routingNumber: "101019644",
+  bankName: "Lead Bank",
+  bankAddress: "1801 Main St, Kansas City, MO 64108",
+  bankCountry: "United States",
+  depositInstructions: "Initiate a FedWire transfer from your US bank using the routing and account numbers below. Include the reference in the wire memo.",
+  warningText: "Include your unique reference in the wire memo",
   thirdPartyEnabled: false,
   depositModel: "reference",
 };
@@ -201,6 +228,7 @@ const VA_RESPONSE_APPROVED = {
 };
 
 const BANK_ID = "bank_d4e5f6a7b8";
+const BANK_ID_USD = "bank_u7s6r5q4p3";
 
 const WITHDRAWAL_BANK_RESPONSE = {
   id: BANK_ID,
@@ -217,7 +245,25 @@ const WITHDRAWAL_BANK_RESPONSE = {
   notificationEnabled: false,
   status: "ACTIVE",
   createdAt: "2026-02-18T11:30:00.000Z",
-  wallets: [],
+  wallets: [LINKED_WALLET],
+};
+
+const WITHDRAWAL_BANK_RESPONSE_USD = {
+  id: BANK_ID_USD,
+  customerId: "550e8400-e29b-41d4-a716-446655440001",
+  beneficiaryName: "MARCO ROSSI",
+  accountNumber: "214033031443",
+  routingNumber: "101019644",
+  addressLine1: "350 5th Ave",
+  city: "New York",
+  country: "US",
+  currency: "USD",
+  recipientType: "CUSTOMER",
+  recipientEmail: "marco.rossi@example.com",
+  notificationEnabled: false,
+  status: "ACTIVE",
+  createdAt: "2026-03-04T09:15:00.000Z",
+  wallets: [LINKED_WALLET],
 };
 
 const ALLOWANCE_RESPONSE = {
@@ -254,6 +300,35 @@ const WITHDRAWAL_RESPONSE = {
   walletAddress: null,
   developerFee: null,
   txHash: null,
+};
+
+// ─── Feature: Indicative Rates data ───
+const RATE_DEPOSIT_PREVIEW = {
+  source_currency: "EUR",
+  target_currency: "USDC",
+  source_amount: "1000",
+  target_amount: "1074.6",
+  exchange_rate: "1.08",
+  fee: "5",
+  fee_currency: "EUR",
+};
+const RATE_WITHDRAWAL_PREVIEW = {
+  source_currency: "USDC",
+  target_currency: "EUR",
+  source_amount: "788.04",
+  target_amount: "850",
+  exchange_rate: "1.08",
+  fee: "2.50",
+  fee_currency: "EUR",
+};
+const RATE_CUSTOMER_PREVIEW = {
+  source_currency: "EUR",
+  target_currency: "USDC",
+  source_amount: "1000",
+  target_amount: "1063.85",
+  exchange_rate: "1.08",
+  fee: "5",
+  fee_currency: "EUR",
 };
 
 const WEBHOOK_BASE = {
@@ -404,6 +479,10 @@ const STEP_ACTORS = {
   "get-fees": [{ from: 0, to: 1, label: "GET /developer-fees", type: "request" }, { from: 1, to: 0, label: "fee config", type: "response" }],
   "wd-list-banks": [{ from: 0, to: 1, label: "GET /withdrawal/banks", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   "va-list": [{ from: 0, to: 1, label: "GET /virtual-accounts", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
+  // Rates flow
+  "rate-deposit": [{ from: 0, to: 1, label: "GET /rates?source_amount", type: "request" }, { from: 1, to: 0, label: "quote", type: "response" }],
+  "rate-withdrawal": [{ from: 0, to: 1, label: "GET /rates?target_amount", type: "request" }, { from: 1, to: 0, label: "quote", type: "response" }],
+  "rate-customer": [{ from: 0, to: 1, label: "GET /rates?customer_id", type: "request" }, { from: 1, to: 0, label: "quote with fees", type: "response" }],
 };
 
 const ACTOR_LABELS = ["Your App", "Compose API", "Provider", "Webhooks"];
@@ -455,12 +534,19 @@ const WALLET_MANAGEMENT_STEPS = [
   { id: "wm-delete", label: "Delete Wallet", endpoint: "DELETE /api/v2/customers/{id}/deposit/wallets/{walletId}" },
 ];
 
+const RATES_STEPS = [
+  { id: "rate-deposit", label: "Deposit Preview", endpoint: "GET /api/v2/rates" },
+  { id: "rate-withdrawal", label: "Withdrawal Preview", endpoint: "GET /api/v2/rates" },
+  { id: "rate-customer", label: "Customer Quote", endpoint: "GET /api/v2/rates" },
+];
+
 const FLOWS = {
   onboarding: { label: "Onboarding", steps: ONBOARDING_STEPS, icon: "\u{1F464}" },
   "virtual-accounts": { label: "Virtual Accounts", steps: VA_STEPS, icon: "\u{1F3E6}" },
   withdrawals: { label: "Withdrawals", steps: WITHDRAWAL_STEPS, icon: "\u{1F4B8}" },
   revenue: { label: "Revenue", steps: REVENUE_STEPS_CONFIG, icon: "\u{1F4B0}" },
   wallets: { label: "Wallets", steps: WALLET_MANAGEMENT_STEPS, icon: "\u{1F511}" },
+  rates: { label: "Rates", steps: RATES_STEPS, icon: "\u{1F4C8}" },
 };
 
 // ─── Feature 6: Code snippet generator (outside component) ───
@@ -928,11 +1014,46 @@ function FeesPanel({ onExecute, executed }) {
   );
 }
 
-function DepositPanel({ onExecute, executed }) {
+function DepositPanel({ onExecute, executed, depositCurrency, setDepositCurrency }) {
+  const isUsd = depositCurrency === "usd";
+  const data = isUsd ? DEPOSIT_DETAILS_USD : DEPOSIT_DETAILS;
+  const fields = isUsd
+    ? [
+        { label: "Reference", value: data.reference, highlight: true },
+        { label: "Account Number", value: data.accountNumber },
+        { label: "Routing Number", value: data.routingNumber },
+        { label: "Account Name", value: data.accountName },
+        { label: "Bank", value: data.bankName },
+        { label: "Bank Address", value: data.bankAddress },
+        { label: "Bank Country", value: data.bankCountry },
+      ]
+    : [
+        { label: "Reference", value: data.reference, highlight: true },
+        { label: "IBAN", value: data.iban },
+        { label: "BIC", value: data.bic },
+        { label: "Account Name", value: data.accountName },
+        { label: "Bank", value: data.bankName },
+        { label: "Bank Country", value: data.bankCountry },
+      ];
   return (
     <div>
       <h2 style={headingStyle}>Deposit Instructions</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Retrieve bank details your customer uses to deposit EUR. Funds are automatically converted to USDC.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Retrieve bank details your customer uses to deposit {isUsd ? "USD via FedWire" : "EUR via SEPA"}. Funds are automatically converted to USDC.</p>
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {[{ id: "eur", label: "EUR / SEPA" }, { id: "usd", label: "USD / FedWire" }].map((opt) => {
+          const active = depositCurrency === opt.id;
+          return (
+            <button key={opt.id} onClick={() => !executed && setDepositCurrency(opt.id)} disabled={executed} style={{
+              padding: "6px 14px", borderRadius: 6,
+              background: active ? C.accentBg : "none",
+              border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
+              color: active ? C.accent : C.textMuted,
+              fontSize: 12, fontWeight: 600, cursor: executed ? "default" : "pointer",
+              fontFamily: T.fontMono, opacity: executed && !active ? 0.4 : 1,
+            }}>{opt.label}</button>
+          );
+        })}
+      </div>
       {!executed && (
         <button onClick={onExecute} style={btnStyle}>
           Get Deposit Details {"\u2192"}
@@ -941,17 +1062,10 @@ function DepositPanel({ onExecute, executed }) {
       {executed && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ padding: "12px 16px", background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8 }}>
-            <div style={{ color: C.warning, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>{"\u26A0"} {DEPOSIT_DETAILS.warningText}</div>
+            <div style={{ color: C.warning, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>{"\u26A0"} {data.warningText}</div>
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
-            {[
-              { label: "Reference", value: DEPOSIT_DETAILS.reference, highlight: true },
-              { label: "IBAN", value: DEPOSIT_DETAILS.iban },
-              { label: "BIC", value: DEPOSIT_DETAILS.bic },
-              { label: "Account Name", value: DEPOSIT_DETAILS.accountName },
-              { label: "Bank", value: DEPOSIT_DETAILS.bankName },
-              { label: "Bank Country", value: DEPOSIT_DETAILS.bankCountry },
-            ].map((f) => (
+            {fields.map((f) => (
               <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                 <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1298,20 +1412,39 @@ function WdListBanksPanel({ onExecute, executed, isError }) {
       {!executed && <button onClick={onExecute} style={btnStyle}>List Banks {"\u2192"}</button>}
       {executed && !isError && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {WITHDRAWAL_BANKS_LIST.map((b) => (
-            <div key={b.id} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{b.beneficiaryName}</span>
-                <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontMono }}>{b.status}</span>
-              </div>
-              {[{ label: "IBAN", value: b.iban }, { label: "BIC", value: b.bic }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }].map((f) => (
-                <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
-                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
-                  <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{f.value}</span>
+          {WITHDRAWAL_BANKS_LIST.map((b) => {
+            const fields = b.currency === "USD"
+              ? [{ label: "Account Number", value: b.accountNumber }, { label: "Routing Number", value: b.routingNumber }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }]
+              : [{ label: "IBAN", value: b.iban }, { label: "BIC", value: b.bic }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }];
+            return (
+              <div key={b.id} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{b.beneficiaryName}</span>
+                  <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontMono }}>{b.status}</span>
                 </div>
-              ))}
-            </div>
-          ))}
+                {fields.map((f) => (
+                  <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
+                    <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
+                    <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{f.value}</span>
+                  </div>
+                ))}
+                {b.wallets && b.wallets.length > 0 && (
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                    <div style={{ fontSize: 10, color: C.accent, fontFamily: T.fontMono, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Linked Deposit Wallet</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                      <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>Address</span>
+                      <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{`${b.wallets[0].address.slice(0, 10)}…${b.wallets[0].address.slice(-6)}`}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                      <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>Chain · Token</span>
+                      <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{b.wallets[0].chain} · {b.wallets[0].currency.toUpperCase()}</span>
+                    </div>
+                    <div style={{ marginTop: 6, color: C.textSecondary, fontSize: 11, lineHeight: 1.5 }}>{b.wallets[0].instructions}</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
       {executed && isError && (
@@ -1560,26 +1693,60 @@ function VaDepositPanel({ onExecute, executed }) {
   );
 }
 
-function WdBankPanel({ onExecute, executed, isError }) {
-  const [form, setForm] = useState({
+function WdBankPanel({ onExecute, executed, isError, bankCurrency, setBankCurrency }) {
+  const isUsd = bankCurrency === "USD";
+  const [eurForm, setEurForm] = useState({
     beneficiary: "MARCO ROSSI",
     iban: "DE89370400440532013000",
     bic: "COBADEFFXXX",
     address: "Friedrichstra\u00DFe 123",
     city: "Berlin",
   });
+  const [usdForm, setUsdForm] = useState({
+    beneficiary: "MARCO ROSSI",
+    accountNumber: "214033031443",
+    routingNumber: "101019644",
+    address: "350 5th Ave",
+    city: "New York",
+  });
+  const eurFields = [
+    { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
+    { label: "IBAN", key: "iban", placeholder: "DE89370400440532013000" },
+    { label: "BIC", key: "bic", placeholder: "COBADEFFXXX" },
+    { label: "Address", key: "address", placeholder: "123 Main St" },
+    { label: "City", key: "city", placeholder: "Berlin" },
+  ];
+  const usdFields = [
+    { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
+    { label: "Account Number", key: "accountNumber", placeholder: "214033031443" },
+    { label: "Routing Number", key: "routingNumber", placeholder: "101019644" },
+    { label: "Address", key: "address", placeholder: "350 5th Ave" },
+    { label: "City", key: "city", placeholder: "New York" },
+  ];
+  const fields = isUsd ? usdFields : eurFields;
+  const form = isUsd ? usdForm : eurForm;
+  const setForm = isUsd ? setUsdForm : setEurForm;
   return (
     <div>
       <h2 style={headingStyle}>Add Withdrawal Bank</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Register a EUR bank account for the customer. Individual accounts are auto-approved.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Register a {isUsd ? "USD" : "EUR"} bank account for the customer. Individual accounts are auto-approved.</p>
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {[{ id: "EUR", label: "EUR / SEPA" }, { id: "USD", label: "USD / ACH+Wire" }].map((opt) => {
+          const active = bankCurrency === opt.id;
+          return (
+            <button key={opt.id} onClick={() => !executed && setBankCurrency(opt.id)} disabled={executed} style={{
+              padding: "6px 14px", borderRadius: 6,
+              background: active ? C.accentBg : "none",
+              border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
+              color: active ? C.accent : C.textMuted,
+              fontSize: 12, fontWeight: 600, cursor: executed ? "default" : "pointer",
+              fontFamily: T.fontMono, opacity: executed && !active ? 0.4 : 1,
+            }}>{opt.label}</button>
+          );
+        })}
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {[
-          { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
-          { label: "IBAN", key: "iban", placeholder: "DE89370400440532013000" },
-          { label: "BIC", key: "bic", placeholder: "COBADEFFXXX" },
-          { label: "Address", key: "address", placeholder: "123 Main St" },
-          { label: "City", key: "city", placeholder: "Berlin" },
-        ].map((f) => (
+        {fields.map((f) => (
           <div key={f.key}>
             <label style={labelStyle}>
               {f.label}
@@ -1607,7 +1774,7 @@ function WdBankPanel({ onExecute, executed, isError }) {
         ))}
       </div>
       {!executed && (
-        <button onClick={() => onExecute({ beneficiary: form.beneficiary, iban: form.iban, bic: form.bic, address: form.address, city: form.city })} style={btnStyle}>
+        <button onClick={() => onExecute({ ...form, currency: bankCurrency })} style={btnStyle}>
           Add Bank Account {"\u2192"}
         </button>
       )}
@@ -1668,17 +1835,33 @@ function WdAllowancePanel({ onExecute, executed }) {
   );
 }
 
-function WdCreatePanel({ onExecute, executed, isError }) {
+function WdCreatePanel({ onExecute, executed, isError, quoteMode, setQuoteMode }) {
+  const isTarget = quoteMode === "target";
   return (
     <div>
       <h2 style={headingStyle}>Create Withdrawal</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Convert USDC to EUR and send to the customer's bank account.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Convert USDC to EUR and send to the customer's bank account.</p>
+      <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+        {[{ id: "source", label: "Specify USDC to send" }, { id: "target", label: "Specify EUR to receive" }].map((opt) => {
+          const active = quoteMode === opt.id;
+          return (
+            <button key={opt.id} onClick={() => !executed && setQuoteMode(opt.id)} disabled={executed} style={{
+              padding: "6px 14px", borderRadius: 6,
+              background: active ? C.accentBg : "none",
+              border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
+              color: active ? C.accent : C.textMuted,
+              fontSize: 12, fontWeight: 600, cursor: executed ? "default" : "pointer",
+              fontFamily: T.fontMono, opacity: executed && !active ? 0.4 : 1,
+            }}>{opt.label}</button>
+          );
+        })}
+      </div>
       <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
         <label style={labelStyle}>
-          Source Amount
+          {isTarget ? "Target Amount (EUR)" : "Source Amount (USDC)"}
         </label>
         <input
-          value="1000"
+          value={isTarget ? "865.50" : "1000"}
           readOnly
           style={{
             width: "100%",
@@ -1744,14 +1927,38 @@ function WdCreatePanel({ onExecute, executed, isError }) {
   );
 }
 
-function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError }) {
-  const stages = ["PROCESSING", "PROPOSED", "COMPLETED"];
+function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError, terminalMode, setTerminalMode }) {
+  const stages = ["PROCESSING", "PROPOSED", "PARTIALLY_SIGNED", "COMPLETED"];
   const currentIdx = stages.indexOf(withdrawalStatus);
+  const TERMINAL_OPTS = [
+    { id: "FAILED", label: "FAILED" },
+    { id: "CANCELLED", label: "CANCELLED" },
+    { id: "EXPIRED", label: "EXPIRED" },
+  ];
+  const failed = isError && (withdrawalStatus === "FAILED" || withdrawalStatus === "CANCELLED" || withdrawalStatus === "EXPIRED");
 
   return (
     <div>
       <h2 style={headingStyle}>Withdrawal Status</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 20px 0" }}>Track the withdrawal as it progresses. In production, listen for withdrawal.status_changed webhooks.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Track the withdrawal as it progresses. In production, listen for withdrawal.status_changed webhooks. PROPOSED and PARTIALLY_SIGNED indicate user action is required in the dashboard.</p>
+
+      {isError && !executed && !polling && setTerminalMode && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono, marginRight: 4 }}>Terminal state:</span>
+          {TERMINAL_OPTS.map((opt) => {
+            const active = terminalMode === opt.id;
+            return (
+              <button key={opt.id} onClick={() => setTerminalMode(opt.id)} style={{
+                padding: "5px 12px", borderRadius: 6,
+                background: active ? C.errorBg : "none",
+                border: `1px solid ${active ? C.errorBorder : C.borderLight}`,
+                color: active ? C.error : C.textMuted,
+                fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: T.fontMono,
+              }}>{opt.label}</button>
+            );
+          })}
+        </div>
+      )}
 
       {!executed && !polling && (
         <button onClick={onExecute} style={btnStyle}>
@@ -1765,7 +1972,7 @@ function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError
             const isCompleted = i < currentIdx || (executed && !isError && i <= currentIdx);
             const isCurrent = i === currentIdx && !(executed && !isError);
             const isFuture = i > currentIdx;
-            const isStuck = isError && stage === "COMPLETED" && i > currentIdx;
+            const isStuck = isError && stage === "COMPLETED" && i > currentIdx && !failed;
             return (
               <div key={stage} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0", borderBottom: i < stages.length - 1 ? `1px solid ${C.border}` : "none" }}>
                 <div
@@ -1792,9 +1999,18 @@ function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError
                 {isCurrent && !isError && (
                   <div className="spin" style={{ width: 14, height: 14, border: `2px solid ${C.warningBorder}`, borderTopColor: C.warning, borderRadius: "50%", marginLeft: 4 }} />
                 )}
+                {(stage === "PROPOSED" || stage === "PARTIALLY_SIGNED") && isCurrent && (
+                  <span style={{ marginLeft: "auto", color: C.warning, fontSize: 11, fontFamily: T.fontMono }}>requires UI action</span>
+                )}
               </div>
             );
           })}
+          {failed && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 0" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, background: C.errorBg, color: C.error, border: `1px solid ${C.errorBorder}` }}>{"\u2717"}</div>
+              <span style={{ color: C.error, fontSize: 14, fontWeight: 600 }}>{withdrawalStatus}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -1812,9 +2028,15 @@ function WdStatusPanel({ onExecute, executed, polling, withdrawalStatus, isError
         <div style={{ marginTop: 16, padding: "16px 20px", background: C.errorBg, border: `1px solid ${C.errorBorder}`, borderRadius: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
             <span style={{ color: C.error, fontSize: 16 }}>{"\u2717"}</span>
-            <span style={{ color: C.error, fontSize: 14, fontWeight: 600 }}>Withdrawal Stuck</span>
+            <span style={{ color: C.error, fontSize: 14, fontWeight: 600 }}>Withdrawal {failed ? withdrawalStatus : "Stuck"}</span>
           </div>
-          <div style={{ color: C.error, fontSize: 13, opacity: 0.9 }}>Status stuck at PROPOSED — manual review required</div>
+          <div style={{ color: C.error, fontSize: 13, opacity: 0.9 }}>{
+            failed
+              ? (withdrawalStatus === "FAILED" ? "Provider returned a permanent failure — funds returned to balance."
+                : withdrawalStatus === "CANCELLED" ? "Withdrawal cancelled before execution — funds returned to balance."
+                : "Withdrawal expired before required UI action was taken.")
+              : "Status stuck at PROPOSED — manual review required"
+          }</div>
         </div>
       )}
     </div>
@@ -2164,6 +2386,67 @@ function WmDeletePanel({ onExecute, executed, isError }) {
   );
 }
 
+// ─── Feature: Rates flow panels ───
+function RatesPanel({ onExecute, executed, variant }) {
+  const presets = {
+    "rate-deposit": {
+      title: "Deposit Preview",
+      blurb: "Preview how much USDC the customer will receive for a EUR deposit. Rates are indicative and are not locked — the actual rate is determined when the transaction is executed.",
+      params: { source_currency: "EUR", target_currency: "USDC", source_amount: "1000" },
+      data: RATE_DEPOSIT_PREVIEW,
+    },
+    "rate-withdrawal": {
+      title: "Withdrawal Preview",
+      blurb: "Customer wants to receive €850 to their bank account — preview how much USDC they'll need to send.",
+      params: { source_currency: "USDC", target_currency: "EUR", target_amount: "850" },
+      data: RATE_WITHDRAWAL_PREVIEW,
+    },
+    "rate-customer": {
+      title: "Customer-Specific Quote",
+      blurb: "Pass customer_id to factor in any developer-fee uplift configured for this customer. The returned target_amount reflects the spread the customer will see.",
+      params: { source_currency: "EUR", target_currency: "USDC", source_amount: "1000", customer_id: "550e8400-e29b-41d4-a716-446655440001" },
+      data: RATE_CUSTOMER_PREVIEW,
+    },
+  };
+  const preset = presets[variant];
+  const data = preset.data;
+  return (
+    <div>
+      <h2 style={headingStyle}>{preset.title}</h2>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>{preset.blurb}</p>
+      <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: C.textMuted, fontFamily: T.fontMono, textTransform: "uppercase", marginBottom: 10 }}>Query Parameters</div>
+        {Object.entries(preset.params).map(([k, v]) => (
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
+            <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{k}</span>
+            <span style={{ color: C.textBody, fontSize: 11, fontFamily: T.fontMono }}>{v}</span>
+          </div>
+        ))}
+      </div>
+      {!executed && <button onClick={onExecute} style={btnStyle}>Get Rate Quote {"→"}</button>}
+      {executed && (
+        <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{data.source_amount} {data.source_currency} {"→"} {data.target_amount} {data.target_currency}</span>
+            <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.accentBg, color: C.accent, border: `1px solid ${C.accentBorder}`, fontFamily: T.fontMono }}>indicative</span>
+          </div>
+          {[
+            { label: "Exchange Rate", value: data.exchange_rate, highlight: true },
+            { label: "Source", value: `${data.source_amount} ${data.source_currency}` },
+            { label: "Target", value: `${data.target_amount} ${data.target_currency}` },
+            { label: "Fee", value: `${data.fee} ${data.fee_currency}` },
+          ].map((f) => (
+            <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${C.border}` }}>
+              <span style={{ color: C.textMuted, fontSize: 12, fontFamily: T.fontMono }}>{f.label}</span>
+              <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontFamily: T.fontMono, fontWeight: f.highlight ? 700 : 400 }}>{f.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Feature: Sequence Diagram ───
 function SequenceDiagram({ steps, executedSteps, currentStep, flowErrors }) {
   const arrowColors = { request: C.accent, response: C.success, internal: C.textMuted, webhook: C.warning };
@@ -2238,7 +2521,7 @@ function KeyboardShortcutsOverlay({ onClose }) {
     { key: "Space / Enter", desc: "Execute current step" },
     { key: "\u2192 / \u2193", desc: "Next step" },
     { key: "\u2190 / \u2191", desc: "Previous step" },
-    { key: "1 \u2013 5", desc: "Switch flow tab" },
+    { key: "1 \u2013 6", desc: "Switch flow tab" },
     { key: "R", desc: "Reset current flow" },
     { key: "P", desc: "Toggle autoplay" },
     { key: "E", desc: "Toggle error mode" },
@@ -2652,13 +2935,17 @@ const btnStyle = {
 // ─── Main App ───
 export default function ComposeDemo() {
   const [activeFlow, setActiveFlow] = useState("onboarding");
-  const [flowSteps, setFlowSteps] = useState({ onboarding: 0, "virtual-accounts": 0, withdrawals: 0, revenue: 0, wallets: 0 });
-  const [flowExecuted, setFlowExecuted] = useState({ onboarding: new Set(), "virtual-accounts": new Set(), withdrawals: new Set(), revenue: new Set(), wallets: new Set() });
-  const [flowPolling, setFlowPolling] = useState({ onboarding: false, "virtual-accounts": false, withdrawals: false, revenue: false, wallets: false });
+  const [flowSteps, setFlowSteps] = useState({ onboarding: 0, "virtual-accounts": 0, withdrawals: 0, revenue: 0, wallets: 0, rates: 0 });
+  const [flowExecuted, setFlowExecuted] = useState({ onboarding: new Set(), "virtual-accounts": new Set(), withdrawals: new Set(), revenue: new Set(), wallets: new Set(), rates: new Set() });
+  const [flowPolling, setFlowPolling] = useState({ onboarding: false, "virtual-accounts": false, withdrawals: false, revenue: false, wallets: false, rates: false });
   const [apiCalls, setApiCalls] = useState([]);
   const [webhooks, setWebhooks] = useState([]);
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
   const [claimStatus, setClaimStatus] = useState(null);
+  const [depositCurrency, setDepositCurrency] = useState("eur");
+  const [bankCurrency, setBankCurrency] = useState("EUR");
+  const [quoteMode, setQuoteMode] = useState("source");
+  const [terminalMode, setTerminalMode] = useState("FAILED");
 
   // Feature 2: Reset flow epoch
   const epochRef = useRef(0);
@@ -2666,7 +2953,7 @@ export default function ComposeDemo() {
 
   // Feature 7: Error simulation
   const [errorMode, setErrorMode] = useState(false);
-  const [flowErrors, setFlowErrors] = useState({ onboarding: new Set(), "virtual-accounts": new Set(), withdrawals: new Set(), revenue: new Set(), wallets: new Set() });
+  const [flowErrors, setFlowErrors] = useState({ onboarding: new Set(), "virtual-accounts": new Set(), withdrawals: new Set(), revenue: new Set(), wallets: new Set(), rates: new Set() });
 
   // Feature 8: Autoplay
   const [autoPlaying, setAutoPlaying] = useState(false);
@@ -2751,6 +3038,11 @@ export default function ComposeDemo() {
             if (epochRef.current !== epoch) return;
             addWebhook("customer.created", { customer_id: DEMO_CUSTOMER.customerId });
           }, 600);
+          // Out-of-band dashboard edit — fires customer.updated with the changed fields
+          setTimeout(() => {
+            if (epochRef.current !== epoch) return;
+            addWebhook("customer.updated", { customerId: DEMO_CUSTOMER.customerId, changedFields: ["email", "expectedMonthlyVolume"] });
+          }, 1400);
           markDone("create");
           break;
 
@@ -2867,9 +3159,9 @@ export default function ComposeDemo() {
         case "deposit":
           addApiCall({
             method: "GET",
-            path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit?currency=eur`,
+            path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit?currency=${depositCurrency}`,
             status: "200 OK",
-            response: DEPOSIT_DETAILS,
+            response: depositCurrency === "usd" ? DEPOSIT_DETAILS_USD : DEPOSIT_DETAILS,
           });
           markDone("deposit");
           break;
@@ -3014,7 +3306,12 @@ export default function ComposeDemo() {
           break;
 
         case "wd-bank": {
-          const bankBody = { beneficiaryName: formDataRef.current.beneficiary || "MARCO ROSSI", iban: formDataRef.current.iban || "DE89370400440532013000", bic: formDataRef.current.bic || "COBADEFFXXX", addressLine1: formDataRef.current.address || "Friedrichstra\u00DFe 123", city: formDataRef.current.city || "Berlin", country: "DE", currency: "EUR", recipientType: "CUSTOMER" };
+          const isUsd = bankCurrency === "USD";
+          const bankBody = isUsd
+            ? { beneficiaryName: formDataRef.current.beneficiary || "MARCO ROSSI", currency: "USD", accountNumber: formDataRef.current.accountNumber || "214033031443", routingNumber: formDataRef.current.routingNumber || "101019644", addressLine1: formDataRef.current.address || "350 5th Ave", city: formDataRef.current.city || "New York", country: "US", recipientType: "CUSTOMER" }
+            : { beneficiaryName: formDataRef.current.beneficiary || "MARCO ROSSI", currency: "EUR", iban: formDataRef.current.iban || "DE89370400440532013000", bic: formDataRef.current.bic || "COBADEFFXXX", addressLine1: formDataRef.current.address || "Friedrichstra\u00DFe 123", city: formDataRef.current.city || "Berlin", country: "DE", recipientType: "CUSTOMER" };
+          const bankResp = isUsd ? WITHDRAWAL_BANK_RESPONSE_USD : WITHDRAWAL_BANK_RESPONSE;
+          const bankIdForWebhooks = isUsd ? BANK_ID_USD : BANK_ID;
           if (errorMode) {
             // Error path: 400 Bad Request
             addApiCall({
@@ -3028,7 +3325,7 @@ export default function ComposeDemo() {
             // created via 201 is later rejected during async review
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.rejected", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: BANK_ID, status: "REJECTED", reason: "Beneficiary name does not match account holder" });
+              addWebhook("withdrawal_bank.rejected", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "REJECTED", reason: "Beneficiary name does not match account holder" });
             }, 800);
             markError("wd-bank");
             markDone("wd-bank");
@@ -3039,15 +3336,15 @@ export default function ComposeDemo() {
               path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/withdrawal/banks`,
               status: "201 Created",
               body: bankBody,
-              response: WITHDRAWAL_BANK_RESPONSE,
+              response: bankResp,
             });
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.created", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: BANK_ID, status: "PENDING" });
+              addWebhook("withdrawal_bank.created", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "PENDING" });
             }, 300);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.approved", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: BANK_ID, status: "ACTIVE" });
+              addWebhook("withdrawal_bank.approved", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "ACTIVE" });
               markDone("wd-bank");
             }, 500);
           }
@@ -3075,14 +3372,17 @@ export default function ComposeDemo() {
           markDone("wd-allowance");
           break;
 
-        case "wd-create":
+        case "wd-create": {
+          const wdBody = quoteMode === "target"
+            ? { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: "USDC", targetAmount: "865.50" }
+            : { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: "USDC", sourceAmount: "1000" };
           if (errorMode) {
             // Error path: 400 Bad Request
             addApiCall({
               method: "POST",
               path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/withdrawal`,
               status: "400 Bad Request",
-              body: { sourceAmount: "1000", withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}` },
+              body: wdBody,
               response: INSUFFICIENT_BALANCE_ERROR,
             });
             markError("wd-create");
@@ -3093,7 +3393,7 @@ export default function ComposeDemo() {
               method: "POST",
               path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/withdrawal`,
               status: "201 Created",
-              body: { sourceAmount: "1000", withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}` },
+              body: wdBody,
               response: WITHDRAWAL_RESPONSE,
             });
             setTimeout(() => {
@@ -3103,37 +3403,47 @@ export default function ComposeDemo() {
             markDone("wd-create");
           }
           break;
+        }
 
         case "wd-status":
           if (errorMode) {
-            // Error path: stuck at PROPOSED
+            // Error path: terminal failure (FAILED / CANCELLED / EXPIRED)
             setPolling(true);
             setWithdrawalStatus("PROCESSING");
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("PROPOSED");
               addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
-              // Stay stuck here — do not complete
+            }, 1200);
+            setTimeout(() => {
+              if (epochRef.current !== epoch) return;
+              setWithdrawalStatus(terminalMode);
+              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: terminalMode });
               setPolling(false);
               markError("wd-status");
               markDone("wd-status");
-            }, 1500);
+            }, 2400);
           } else {
-            // Success path
+            // Success path: PROCESSING → PROPOSED → PARTIALLY_SIGNED → COMPLETED
             setPolling(true);
             setWithdrawalStatus("PROCESSING");
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("PROPOSED");
               addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
-            }, 1500);
+            }, 1200);
+            setTimeout(() => {
+              if (epochRef.current !== epoch) return;
+              setWithdrawalStatus("PARTIALLY_SIGNED");
+              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PARTIALLY_SIGNED" });
+            }, 2200);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("COMPLETED");
               addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
               setPolling(false);
               markDone("wd-status");
-            }, 3000);
+            }, 3200);
           }
           break;
 
@@ -3278,9 +3588,29 @@ export default function ComposeDemo() {
           }
           break;
         }
+
+        // ─── Rates flow ───
+        case "rate-deposit": {
+          const params = new URLSearchParams({ source_currency: "EUR", target_currency: "USDC", source_amount: "1000" });
+          addApiCall({ method: "GET", path: `/api/v2/rates?${params.toString()}`, status: "200 OK", response: RATE_DEPOSIT_PREVIEW });
+          markDone("rate-deposit");
+          break;
+        }
+        case "rate-withdrawal": {
+          const params = new URLSearchParams({ source_currency: "USDC", target_currency: "EUR", target_amount: "850" });
+          addApiCall({ method: "GET", path: `/api/v2/rates?${params.toString()}`, status: "200 OK", response: RATE_WITHDRAWAL_PREVIEW });
+          markDone("rate-withdrawal");
+          break;
+        }
+        case "rate-customer": {
+          const params = new URLSearchParams({ source_currency: "EUR", target_currency: "USDC", source_amount: "1000", customer_id: DEMO_CUSTOMER.customerId });
+          addApiCall({ method: "GET", path: `/api/v2/rates?${params.toString()}`, status: "200 OK", response: RATE_CUSTOMER_PREVIEW });
+          markDone("rate-customer");
+          break;
+        }
       }
     },
-    [addApiCall, addWebhook, markDone, markError, errorMode]
+    [addApiCall, addWebhook, markDone, markError, errorMode, depositCurrency, bankCurrency, quoteMode, terminalMode]
   );
 
   const handleExecute = useCallback((formData) => {
@@ -3344,7 +3674,7 @@ export default function ComposeDemo() {
           e.preventDefault();
           if (canGoBack) setCurrentStep(currentStep - 1);
           break;
-        case "1": case "2": case "3": case "4": case "5": {
+        case "1": case "2": case "3": case "4": case "5": case "6": {
           const idx = parseInt(e.key) - 1;
           if (idx < flowKeys.length) { setActiveFlow(flowKeys[idx]); setAutoPlaying(false); autoPlayRef.current = false; }
           break;
@@ -3386,7 +3716,7 @@ export default function ComposeDemo() {
       case "wallet": return <WalletPanel onExecute={handleExecute} executed={executed} />;
       case "fees": return <FeesPanel onExecute={handleExecute} executed={executed} />;
       case "get-fees": return <GetFeesPanel onExecute={handleExecute} executed={executed} isError={isError} />;
-      case "deposit": return <DepositPanel onExecute={handleExecute} executed={executed} />;
+      case "deposit": return <DepositPanel onExecute={handleExecute} executed={executed} depositCurrency={depositCurrency} setDepositCurrency={setDepositCurrency} />;
       case "transactions": return <TransactionsPanel onExecute={handleExecute} executed={executed} onSelectTxn={() => { const idx = steps.findIndex((s) => s.id === "txn-detail"); if (idx !== -1) setCurrentStep(idx); }} />;
       case "kyc-submit": return <KycSubmitPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "doc-upload": return <DocUploadPanel onExecute={handleExecute} executed={executed} isError={isError} />;
@@ -3396,10 +3726,14 @@ export default function ComposeDemo() {
       case "va-list": return <VaListPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "va-deposit": return <VaDepositPanel onExecute={handleExecute} executed={executed} />;
       case "wd-list-banks": return <WdListBanksPanel onExecute={handleExecute} executed={executed} isError={isError} />;
-      case "wd-bank": return <WdBankPanel onExecute={handleExecute} executed={executed} isError={isError} />;
+      case "wd-bank": return <WdBankPanel onExecute={handleExecute} executed={executed} isError={isError} bankCurrency={bankCurrency} setBankCurrency={setBankCurrency} />;
       case "wd-allowance": return <WdAllowancePanel onExecute={handleExecute} executed={executed} />;
-      case "wd-create": return <WdCreatePanel onExecute={handleExecute} executed={executed} isError={isError} />;
-      case "wd-status": return <WdStatusPanel onExecute={handleExecute} executed={executed} polling={polling} withdrawalStatus={withdrawalStatus} isError={isError} />;
+      case "wd-create": return <WdCreatePanel onExecute={handleExecute} executed={executed} isError={isError} quoteMode={quoteMode} setQuoteMode={setQuoteMode} />;
+      case "wd-status": return <WdStatusPanel onExecute={handleExecute} executed={executed} polling={polling} withdrawalStatus={withdrawalStatus} isError={isError} terminalMode={terminalMode} setTerminalMode={setTerminalMode} />;
+      case "rate-deposit":
+      case "rate-withdrawal":
+      case "rate-customer":
+        return <RatesPanel onExecute={handleExecute} executed={executed} variant={step.id} />;
       case "verify-addr": return <VerifyAddressPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "kyc-addr": return <KycAddressPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "org-balances": return <OrgBalancesPanel onExecute={handleExecute} executed={executed} isError={isError} />;
