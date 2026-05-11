@@ -15,11 +15,12 @@ Open [http://localhost:5173](http://localhost:5173).
 
 | Flow | Steps | Endpoints Covered |
 |------|-------|-------------------|
-| **Onboarding** | 14 | Create customer, KYC verification, document upload, wallet setup, deposit details |
+| **Onboarding** | 14 | Create customer, KYC verification, document upload, wallet setup, deposit details (EUR/USD) |
 | **Virtual Accounts** | 4 | Create virtual account, IBAN assignment, list accounts, deposit simulation |
-| **Withdrawals** | 5 | Add bank, list banks, check allowance, create withdrawal, track status |
+| **Withdrawals** | 5 | Add EUR/USD bank, list banks, check allowance, create withdrawal (source or target amount), track status (PROCESSING → PROPOSED → PARTIALLY_SIGNED → COMPLETED, plus FAILED/CANCELLED/EXPIRED in error mode) |
 | **Revenue** | 4 | Org balances, developer fee balance, claim fees, transfer confirmation |
 | **Wallets** | 4 | List wallets, get detail, update address, delete wallet |
+| **Rates** | 3 | Indicative deposit quote, withdrawal quote, customer-specific quote |
 
 ## Features
 
@@ -33,7 +34,7 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## API Coverage
 
-All 31 endpoints from the Customers API v2 spec are demonstrated, including:
+All 30 endpoints from the Customers API v2 spec (`2026-04-29`) are demonstrated, including:
 
 - `POST /api/v2/customers` — Create customer
 - `POST /api/v2/customers/{id}/kyc` — Initiate KYC
@@ -42,12 +43,14 @@ All 31 endpoints from the Customers API v2 spec are demonstrated, including:
 - `POST /api/v2/customers/{id}/deposit/wallets` — Configure wallets
 - `POST /api/v2/verify-address` — Verify Ethereum address
 - `PATCH /api/v2/customers/{id}/developer-fees` — Set developer fees
-- `GET /api/v2/customers/{id}/deposit` — Get deposit instructions
+- `GET /api/v2/customers/{id}/deposit?currency=eur|usd` — Get EUR (SEPA) or USD (FedWire) deposit instructions
 - `POST /api/v2/customers/{id}/virtual-account` — Create virtual account
-- `POST /api/v2/customers/{id}/withdrawal` — Create withdrawal
+- `POST /api/v2/customers/{id}/withdrawal/banks` — Add EUR (IBAN/BIC) or USD (account/routing) bank
+- `POST /api/v2/customers/{id}/withdrawal` — Create withdrawal (`sourceAmount` or `targetAmount`)
 - `GET /api/v2/balances` — Organization balances
+- `GET /api/v2/rates` — Indicative rate quote (EUR↔USDC, EUR↔EURC, USD→USDC)
 
-15 webhook event types are simulated across all flows.
+16 webhook event types are simulated across all flows (including `customer.updated`).
 
 ## Tech Stack
 
