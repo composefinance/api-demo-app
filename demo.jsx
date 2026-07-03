@@ -121,8 +121,9 @@ const LINKED_WALLET = {
   instructions: "Send USDC to this address to automatically receive funds in your bank account. Minimum: 5 USDC.",
 };
 const WITHDRAWAL_BANKS_LIST = [
-  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", iban: "DE89370400440532013000", bic: "COBADEFFXXX", addressLine1: "Friedrichstraße 123", city: "Berlin", country: "DE", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [LINKED_WALLET] },
-  { id: "bank_u7s6r5q4p3", beneficiaryName: "MARCO ROSSI", accountNumber: "214033031443", routingNumber: "101019644", addressLine1: "350 5th Ave", city: "New York", country: "US", currency: "USD", status: "ACTIVE", createdAt: "2026-03-04T09:15:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", paymentRail: "SEPA", iban: "DE89370400440532013000", bic: "COBADEFFXXX", addressLine1: "Friedrichstraße 123", city: "Berlin", country: "DE", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_u7s6r5q4p3", beneficiaryName: "MARCO ROSSI", paymentRail: "FEDWIRE", accountNumber: "214033031443", routingNumber: "101019644", addressLine1: "350 5th Ave", city: "New York", country: "US", currency: "USD", status: "ACTIVE", createdAt: "2026-03-04T09:15:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_s1w2i3f4t5", beneficiaryName: "MARCO ROSSI", paymentRail: "SWIFT", accountNumber: "GB29NWBK60161331926819", bic: "NWBKGB2LXXX", bankName: "NatWest Bank", bankAddress: "250 Bishopsgate, London EC2M 4AA", bankCountry: "GB", addressLine1: "10 Downing St", city: "London", country: "GB", currency: "USD", status: "PENDING", createdAt: "2026-06-30T14:20:00.000Z", wallets: [] },
 ];
 const WITHDRAWAL_BANKS_EMPTY = [];
 
@@ -132,9 +133,11 @@ const VA_LIST_RESPONSE = [
 ];
 const VA_LIST_EMPTY = [];
 
-const DEPOSIT_DETAILS = {
+// Deposit details are keyed by payment rail: SEPA (EUR), FEDWIRE (USD domestic), SWIFT (USD international)
+const DEPOSIT_DETAILS_SEPA = {
   customerId: "550e8400-e29b-41d4-a716-446655440001",
   currency: "eur",
+  paymentRail: "SEPA",
   reference: "A7B3C9D2E1",
   accountName: "Compose Finance UAB",
   accountAddress: "Vilniaus g. 31, LT-01402 Vilnius, Lithuania",
@@ -149,9 +152,10 @@ const DEPOSIT_DETAILS = {
   depositModel: "reference",
 };
 
-const DEPOSIT_DETAILS_USD = {
+const DEPOSIT_DETAILS_FEDWIRE = {
   customerId: "550e8400-e29b-41d4-a716-446655440001",
   currency: "usd",
+  paymentRail: "FEDWIRE",
   reference: "A7B3C9D2E1",
   accountName: "Compose Finance Inc.",
   accountAddress: "350 5th Ave, New York, NY 10118, United States",
@@ -165,6 +169,26 @@ const DEPOSIT_DETAILS_USD = {
   thirdPartyEnabled: false,
   depositModel: "reference",
 };
+
+const DEPOSIT_DETAILS_SWIFT = {
+  customerId: "550e8400-e29b-41d4-a716-446655440001",
+  currency: "usd",
+  paymentRail: "SWIFT",
+  reference: "A7B3C9D2E1",
+  accountName: "Compose Finance Inc.",
+  accountAddress: "350 5th Ave, New York, NY 10118, United States",
+  accountNumber: "214033031443",
+  bic: "LEADUS33XXX",
+  bankName: "Lead Bank",
+  bankAddress: "1801 Main St, Kansas City, MO 64108",
+  bankCountry: "US",
+  depositInstructions: "Initiate an international SWIFT wire to the account and BIC below. Include the reference in the wire memo. Intermediary bank fees may apply.",
+  warningText: "Include your unique reference in the wire memo",
+  thirdPartyEnabled: false,
+  depositModel: "reference",
+};
+
+const DEPOSIT_DETAILS_BY_RAIL = { SEPA: DEPOSIT_DETAILS_SEPA, FEDWIRE: DEPOSIT_DETAILS_FEDWIRE, SWIFT: DEPOSIT_DETAILS_SWIFT };
 
 const DEVELOPER_FEES_RESPONSE = {
   customerId: "550e8400-e29b-41d4-a716-446655440001",
@@ -228,12 +252,14 @@ const VA_RESPONSE_APPROVED = {
 };
 
 const BANK_ID = "bank_d4e5f6a7b8";
-const BANK_ID_USD = "bank_u7s6r5q4p3";
+const BANK_ID_FEDWIRE = "bank_u7s6r5q4p3";
+const BANK_ID_SWIFT = "bank_s1w2i3f4t5";
 
-const WITHDRAWAL_BANK_RESPONSE = {
+const WITHDRAWAL_BANK_RESPONSE_SEPA = {
   id: BANK_ID,
   customerId: "550e8400-e29b-41d4-a716-446655440001",
   beneficiaryName: "MARCO ROSSI",
+  paymentRail: "SEPA",
   iban: "DE89370400440532013000",
   bic: "COBADEFFXXX",
   addressLine1: "Friedrichstra\u00DFe 123",
@@ -248,10 +274,11 @@ const WITHDRAWAL_BANK_RESPONSE = {
   wallets: [LINKED_WALLET],
 };
 
-const WITHDRAWAL_BANK_RESPONSE_USD = {
-  id: BANK_ID_USD,
+const WITHDRAWAL_BANK_RESPONSE_FEDWIRE = {
+  id: BANK_ID_FEDWIRE,
   customerId: "550e8400-e29b-41d4-a716-446655440001",
   beneficiaryName: "MARCO ROSSI",
+  paymentRail: "FEDWIRE",
   accountNumber: "214033031443",
   routingNumber: "101019644",
   addressLine1: "350 5th Ave",
@@ -265,6 +292,31 @@ const WITHDRAWAL_BANK_RESPONSE_USD = {
   createdAt: "2026-03-04T09:15:00.000Z",
   wallets: [LINKED_WALLET],
 };
+
+const WITHDRAWAL_BANK_RESPONSE_SWIFT = {
+  id: BANK_ID_SWIFT,
+  customerId: "550e8400-e29b-41d4-a716-446655440001",
+  beneficiaryName: "MARCO ROSSI",
+  paymentRail: "SWIFT",
+  accountNumber: "GB29NWBK60161331926819",
+  bic: "NWBKGB2LXXX",
+  bankName: "NatWest Bank",
+  bankAddress: "250 Bishopsgate, London EC2M 4AA",
+  bankCountry: "GB",
+  addressLine1: "10 Downing St",
+  city: "London",
+  country: "GB",
+  currency: "USD",
+  recipientType: "CUSTOMER",
+  recipientEmail: "marco.rossi@example.com",
+  notificationEnabled: false,
+  status: "PENDING",
+  createdAt: "2026-06-30T14:20:00.000Z",
+  wallets: [],
+};
+
+const WITHDRAWAL_BANK_RESPONSE_BY_RAIL = { SEPA: WITHDRAWAL_BANK_RESPONSE_SEPA, FEDWIRE: WITHDRAWAL_BANK_RESPONSE_FEDWIRE, SWIFT: WITHDRAWAL_BANK_RESPONSE_SWIFT };
+const BANK_ID_BY_RAIL = { SEPA: BANK_ID, FEDWIRE: BANK_ID_FEDWIRE, SWIFT: BANK_ID_SWIFT };
 
 const ALLOWANCE_RESPONSE = {
   enabled: true,
@@ -284,6 +336,7 @@ const WITHDRAWAL_RESPONSE = {
   type: "WITHDRAWAL",
   status: "PROCESSING",
   requiresUiAction: false,
+  paymentRail: "SEPA",
   createdAt: "2026-02-18T12:00:00.000Z",
   completedAt: null,
   sourceCurrency: "USDC",
@@ -311,6 +364,7 @@ const RATE_DEPOSIT_PREVIEW = {
   exchange_rate: "1.08",
   fee: "5",
   fee_currency: "EUR",
+  payment_rail: "SEPA",
 };
 const RATE_WITHDRAWAL_PREVIEW = {
   source_currency: "USDC",
@@ -320,7 +374,9 @@ const RATE_WITHDRAWAL_PREVIEW = {
   exchange_rate: "1.08",
   fee: "2.50",
   fee_currency: "EUR",
+  payment_rail: "SEPA",
 };
+// Customer-scoped quote factors in the customer's developer fee, returned in developer_fee
 const RATE_CUSTOMER_PREVIEW = {
   source_currency: "EUR",
   target_currency: "USDC",
@@ -329,6 +385,12 @@ const RATE_CUSTOMER_PREVIEW = {
   exchange_rate: "1.08",
   fee: "5",
   fee_currency: "EUR",
+  payment_rail: "SEPA",
+  developer_fee: {
+    amount: "10.75",
+    currency: "EUR",
+    developerSpreadFeeBps: 100,
+  },
 };
 
 const WEBHOOK_BASE = {
@@ -1014,36 +1076,53 @@ function FeesPanel({ onExecute, executed }) {
   );
 }
 
-function DepositPanel({ onExecute, executed, depositCurrency, setDepositCurrency }) {
-  const isUsd = depositCurrency === "usd";
-  const data = isUsd ? DEPOSIT_DETAILS_USD : DEPOSIT_DETAILS;
-  const fields = isUsd
-    ? [
-        { label: "Reference", value: data.reference, highlight: true },
-        { label: "Account Number", value: data.accountNumber },
-        { label: "Routing Number", value: data.routingNumber },
-        { label: "Account Name", value: data.accountName },
-        { label: "Bank", value: data.bankName },
-        { label: "Bank Address", value: data.bankAddress },
-        { label: "Bank Country", value: data.bankCountry },
-      ]
-    : [
-        { label: "Reference", value: data.reference, highlight: true },
-        { label: "IBAN", value: data.iban },
-        { label: "BIC", value: data.bic },
-        { label: "Account Name", value: data.accountName },
-        { label: "Bank", value: data.bankName },
-        { label: "Bank Country", value: data.bankCountry },
-      ];
+const DEPOSIT_RAILS = [
+  { id: "SEPA", label: "SEPA", blurb: "EUR via SEPA" },
+  { id: "FEDWIRE", label: "FEDWIRE", blurb: "USD via FedWire (domestic)" },
+  { id: "SWIFT", label: "SWIFT", blurb: "USD via SWIFT (international)" },
+];
+
+function DepositPanel({ onExecute, executed, depositRail, setDepositRail }) {
+  const data = DEPOSIT_DETAILS_BY_RAIL[depositRail];
+  const fieldsByRail = {
+    SEPA: [
+      { label: "Reference", value: data.reference, highlight: true },
+      { label: "IBAN", value: data.iban },
+      { label: "BIC", value: data.bic },
+      { label: "Account Name", value: data.accountName },
+      { label: "Bank", value: data.bankName },
+      { label: "Bank Country", value: data.bankCountry },
+    ],
+    FEDWIRE: [
+      { label: "Reference", value: data.reference, highlight: true },
+      { label: "Account Number", value: data.accountNumber },
+      { label: "Routing Number", value: data.routingNumber },
+      { label: "Account Name", value: data.accountName },
+      { label: "Bank", value: data.bankName },
+      { label: "Bank Address", value: data.bankAddress },
+      { label: "Bank Country", value: data.bankCountry },
+    ],
+    SWIFT: [
+      { label: "Reference", value: data.reference, highlight: true },
+      { label: "Account Number / IBAN", value: data.accountNumber },
+      { label: "BIC / SWIFT", value: data.bic },
+      { label: "Account Name", value: data.accountName },
+      { label: "Bank", value: data.bankName },
+      { label: "Bank Address", value: data.bankAddress },
+      { label: "Bank Country", value: data.bankCountry },
+    ],
+  };
+  const fields = fieldsByRail[depositRail];
+  const railMeta = DEPOSIT_RAILS.find((r) => r.id === depositRail);
   return (
     <div>
       <h2 style={headingStyle}>Deposit Instructions</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Retrieve bank details your customer uses to deposit {isUsd ? "USD via FedWire" : "EUR via SEPA"}. Funds are automatically converted to USDC.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Retrieve bank details your customer uses to deposit {railMeta.blurb}. Funds are automatically converted to USDC.</p>
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        {[{ id: "eur", label: "EUR / SEPA" }, { id: "usd", label: "USD / FedWire" }].map((opt) => {
-          const active = depositCurrency === opt.id;
+        {DEPOSIT_RAILS.map((opt) => {
+          const active = depositRail === opt.id;
           return (
-            <button key={opt.id} onClick={() => !executed && setDepositCurrency(opt.id)} disabled={executed} style={{
+            <button key={opt.id} onClick={() => !executed && setDepositRail(opt.id)} disabled={executed} style={{
               padding: "6px 14px", borderRadius: 6,
               background: active ? C.accentBg : "none",
               border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
@@ -1413,14 +1492,19 @@ function WdListBanksPanel({ onExecute, executed, isError }) {
       {executed && !isError && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {WITHDRAWAL_BANKS_LIST.map((b) => {
-            const fields = b.currency === "USD"
+            const fields = b.paymentRail === "SEPA"
+              ? [{ label: "IBAN", value: b.iban }, { label: "BIC", value: b.bic }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }]
+              : b.paymentRail === "FEDWIRE"
               ? [{ label: "Account Number", value: b.accountNumber }, { label: "Routing Number", value: b.routingNumber }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }]
-              : [{ label: "IBAN", value: b.iban }, { label: "BIC", value: b.bic }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }];
+              : [{ label: "Account / IBAN", value: b.accountNumber }, { label: "BIC / SWIFT", value: b.bic }, { label: "Bank", value: b.bankName }, { label: "Bank Country", value: b.bankCountry }, { label: "Currency", value: b.currency }, { label: "Bank ID", value: b.id }];
             return (
               <div key={b.id} style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{b.beneficiaryName}</span>
-                  <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.successBg, color: C.success, border: `1px solid ${C.successBorder}`, fontFamily: T.fontMono }}>{b.status}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: C.textBody, fontSize: 13, fontWeight: 600 }}>{b.beneficiaryName}</span>
+                    <span style={{ padding: "1px 7px", borderRadius: 4, fontSize: 10, background: C.accentBg, color: C.accent, border: `1px solid ${C.accentBorder}`, fontFamily: T.fontMono }}>{b.paymentRail}</span>
+                  </div>
+                  <StatusBadge status={b.status} />
                 </div>
                 {fields.map((f) => (
                   <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: `1px solid ${C.border}` }}>
@@ -1693,48 +1777,76 @@ function VaDepositPanel({ onExecute, executed }) {
   );
 }
 
-function WdBankPanel({ onExecute, executed, isError, bankCurrency, setBankCurrency }) {
-  const isUsd = bankCurrency === "USD";
-  const [eurForm, setEurForm] = useState({
+const BANK_RAILS = [
+  { id: "SEPA", label: "SEPA", currency: "EUR" },
+  { id: "FEDWIRE", label: "FEDWIRE", currency: "USD" },
+  { id: "SWIFT", label: "SWIFT", currency: "USD" },
+];
+
+function WdBankPanel({ onExecute, executed, isError, bankRail, setBankRail }) {
+  const [sepaForm, setSepaForm] = useState({
     beneficiary: "MARCO ROSSI",
     iban: "DE89370400440532013000",
     bic: "COBADEFFXXX",
     address: "Friedrichstra\u00DFe 123",
     city: "Berlin",
   });
-  const [usdForm, setUsdForm] = useState({
+  const [fedwireForm, setFedwireForm] = useState({
     beneficiary: "MARCO ROSSI",
     accountNumber: "214033031443",
     routingNumber: "101019644",
     address: "350 5th Ave",
     city: "New York",
   });
-  const eurFields = [
-    { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
-    { label: "IBAN", key: "iban", placeholder: "DE89370400440532013000" },
-    { label: "BIC", key: "bic", placeholder: "COBADEFFXXX" },
-    { label: "Address", key: "address", placeholder: "123 Main St" },
-    { label: "City", key: "city", placeholder: "Berlin" },
-  ];
-  const usdFields = [
-    { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
-    { label: "Account Number", key: "accountNumber", placeholder: "214033031443" },
-    { label: "Routing Number", key: "routingNumber", placeholder: "101019644" },
-    { label: "Address", key: "address", placeholder: "350 5th Ave" },
-    { label: "City", key: "city", placeholder: "New York" },
-  ];
-  const fields = isUsd ? usdFields : eurFields;
-  const form = isUsd ? usdForm : eurForm;
-  const setForm = isUsd ? setUsdForm : setEurForm;
+  const [swiftForm, setSwiftForm] = useState({
+    beneficiary: "MARCO ROSSI",
+    accountNumber: "GB29NWBK60161331926819",
+    bic: "NWBKGB2LXXX",
+    bankName: "NatWest Bank",
+    bankAddress: "250 Bishopsgate, London EC2M 4AA",
+    bankCountry: "GB",
+    address: "10 Downing St",
+    city: "London",
+  });
+  const RAIL_FIELDS = {
+    SEPA: [
+      { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
+      { label: "IBAN", key: "iban", placeholder: "DE89370400440532013000" },
+      { label: "BIC", key: "bic", placeholder: "COBADEFFXXX" },
+      { label: "Address", key: "address", placeholder: "123 Main St" },
+      { label: "City", key: "city", placeholder: "Berlin" },
+    ],
+    FEDWIRE: [
+      { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
+      { label: "Account Number", key: "accountNumber", placeholder: "214033031443" },
+      { label: "Routing Number", key: "routingNumber", placeholder: "101019644" },
+      { label: "Address", key: "address", placeholder: "350 5th Ave" },
+      { label: "City", key: "city", placeholder: "New York" },
+    ],
+    SWIFT: [
+      { label: "Beneficiary Name", key: "beneficiary", placeholder: "JOHN DOE" },
+      { label: "Account Number / IBAN", key: "accountNumber", placeholder: "GB29NWBK60161331926819" },
+      { label: "BIC / SWIFT", key: "bic", placeholder: "NWBKGB2LXXX" },
+      { label: "Bank Name", key: "bankName", placeholder: "NatWest Bank" },
+      { label: "Bank Address", key: "bankAddress", placeholder: "250 Bishopsgate, London" },
+      { label: "Bank Country", key: "bankCountry", placeholder: "GB" },
+      { label: "Address", key: "address", placeholder: "10 Downing St" },
+      { label: "City", key: "city", placeholder: "London" },
+    ],
+  };
+  const railMeta = BANK_RAILS.find((r) => r.id === bankRail);
+  const fields = RAIL_FIELDS[bankRail];
+  const form = bankRail === "SEPA" ? sepaForm : bankRail === "FEDWIRE" ? fedwireForm : swiftForm;
+  const setForm = bankRail === "SEPA" ? setSepaForm : bankRail === "FEDWIRE" ? setFedwireForm : setSwiftForm;
   return (
     <div>
       <h2 style={headingStyle}>Add Withdrawal Bank</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Register a {isUsd ? "USD" : "EUR"} bank account for the customer. Individual accounts are auto-approved.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Register a {railMeta.currency} bank account on the {bankRail} rail. Individual accounts are auto-approved (SWIFT banks may go through review).</p>
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-        {[{ id: "EUR", label: "EUR / SEPA" }, { id: "USD", label: "USD / ACH+Wire" }].map((opt) => {
-          const active = bankCurrency === opt.id;
+        {BANK_RAILS.map((opt) => {
+          const active = bankRail === opt.id;
           return (
-            <button key={opt.id} onClick={() => !executed && setBankCurrency(opt.id)} disabled={executed} style={{
+            <button key={opt.id} onClick={() => !executed && setBankRail(opt.id)} disabled={executed} style={{
               padding: "6px 14px", borderRadius: 6,
               background: active ? C.accentBg : "none",
               border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
@@ -1774,7 +1886,7 @@ function WdBankPanel({ onExecute, executed, isError, bankCurrency, setBankCurren
         ))}
       </div>
       {!executed && (
-        <button onClick={() => onExecute({ ...form, currency: bankCurrency })} style={btnStyle}>
+        <button onClick={() => onExecute({ ...form, paymentRail: bankRail, currency: railMeta.currency })} style={btnStyle}>
           Add Bank Account {"\u2192"}
         </button>
       )}
@@ -2391,19 +2503,19 @@ function RatesPanel({ onExecute, executed, variant }) {
   const presets = {
     "rate-deposit": {
       title: "Deposit Preview",
-      blurb: "Preview how much USDC the customer will receive for a EUR deposit. Rates are indicative and are not locked — the actual rate is determined when the transaction is executed.",
-      params: { source_currency: "EUR", target_currency: "USDC", source_amount: "1000" },
+      blurb: "Preview how much USDC the customer will receive for a EUR deposit on the SEPA rail. Rates are indicative and are not locked — the actual rate is determined when the transaction is executed.",
+      params: { source_currency: "EUR", target_currency: "USDC", source_amount: "1000", payment_rail: "SEPA" },
       data: RATE_DEPOSIT_PREVIEW,
     },
     "rate-withdrawal": {
       title: "Withdrawal Preview",
       blurb: "Customer wants to receive €850 to their bank account — preview how much USDC they'll need to send.",
-      params: { source_currency: "USDC", target_currency: "EUR", target_amount: "850" },
+      params: { source_currency: "USDC", target_currency: "EUR", target_amount: "850", payment_rail: "SEPA" },
       data: RATE_WITHDRAWAL_PREVIEW,
     },
     "rate-customer": {
       title: "Customer-Specific Quote",
-      blurb: "Pass customer_id to factor in any developer-fee uplift configured for this customer. The returned target_amount reflects the spread the customer will see.",
+      blurb: "Pass customer_id to factor in the developer-fee uplift configured for this customer. The response includes a developer_fee breakdown and the target_amount the customer will actually see.",
       params: { source_currency: "EUR", target_currency: "USDC", source_amount: "1000", customer_id: "550e8400-e29b-41d4-a716-446655440001" },
       data: RATE_CUSTOMER_PREVIEW,
     },
@@ -2432,6 +2544,7 @@ function RatesPanel({ onExecute, executed, variant }) {
           </div>
           {[
             { label: "Exchange Rate", value: data.exchange_rate, highlight: true },
+            { label: "Payment Rail", value: data.payment_rail },
             { label: "Source", value: `${data.source_amount} ${data.source_currency}` },
             { label: "Target", value: `${data.target_amount} ${data.target_currency}` },
             { label: "Fee", value: `${data.fee} ${data.fee_currency}` },
@@ -2441,6 +2554,20 @@ function RatesPanel({ onExecute, executed, variant }) {
               <span style={{ color: f.highlight ? C.accent : C.textBody, fontSize: 13, fontFamily: T.fontMono, fontWeight: f.highlight ? 700 : 400 }}>{f.value}</span>
             </div>
           ))}
+          {data.developer_fee && (
+            <div style={{ marginTop: 12, padding: "10px 12px", background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+              <div style={{ fontSize: 10, color: C.warning, fontFamily: T.fontMono, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Developer Fee (your revenue)</div>
+              {[
+                { label: "Amount", value: `${data.developer_fee.amount} ${data.developer_fee.currency}` },
+                { label: "Spread", value: `${data.developer_fee.developerSpreadFeeBps} bps (${(data.developer_fee.developerSpreadFeeBps / 100).toFixed(2)}%)` },
+              ].map((f) => (
+                <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+                  <span style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{f.label}</span>
+                  <span style={{ color: C.warning, fontSize: 11, fontFamily: T.fontMono, fontWeight: 600 }}>{f.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -2942,8 +3069,8 @@ export default function ComposeDemo() {
   const [webhooks, setWebhooks] = useState([]);
   const [withdrawalStatus, setWithdrawalStatus] = useState(null);
   const [claimStatus, setClaimStatus] = useState(null);
-  const [depositCurrency, setDepositCurrency] = useState("eur");
-  const [bankCurrency, setBankCurrency] = useState("EUR");
+  const [depositRail, setDepositRail] = useState("SEPA");
+  const [bankRail, setBankRail] = useState("SEPA");
   const [quoteMode, setQuoteMode] = useState("source");
   const [terminalMode, setTerminalMode] = useState("FAILED");
 
@@ -3159,9 +3286,9 @@ export default function ComposeDemo() {
         case "deposit":
           addApiCall({
             method: "GET",
-            path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit?currency=${depositCurrency}`,
+            path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit?paymentRail=${depositRail}`,
             status: "200 OK",
-            response: depositCurrency === "usd" ? DEPOSIT_DETAILS_USD : DEPOSIT_DETAILS,
+            response: DEPOSIT_DETAILS_BY_RAIL[depositRail],
           });
           markDone("deposit");
           break;
@@ -3306,12 +3433,15 @@ export default function ComposeDemo() {
           break;
 
         case "wd-bank": {
-          const isUsd = bankCurrency === "USD";
-          const bankBody = isUsd
-            ? { beneficiaryName: formDataRef.current.beneficiary || "MARCO ROSSI", currency: "USD", accountNumber: formDataRef.current.accountNumber || "214033031443", routingNumber: formDataRef.current.routingNumber || "101019644", addressLine1: formDataRef.current.address || "350 5th Ave", city: formDataRef.current.city || "New York", country: "US", recipientType: "CUSTOMER" }
-            : { beneficiaryName: formDataRef.current.beneficiary || "MARCO ROSSI", currency: "EUR", iban: formDataRef.current.iban || "DE89370400440532013000", bic: formDataRef.current.bic || "COBADEFFXXX", addressLine1: formDataRef.current.address || "Friedrichstra\u00DFe 123", city: formDataRef.current.city || "Berlin", country: "DE", recipientType: "CUSTOMER" };
-          const bankResp = isUsd ? WITHDRAWAL_BANK_RESPONSE_USD : WITHDRAWAL_BANK_RESPONSE;
-          const bankIdForWebhooks = isUsd ? BANK_ID_USD : BANK_ID;
+          const rail = bankRail;
+          const f = formDataRef.current;
+          const bankBody = rail === "SEPA"
+            ? { beneficiaryName: f.beneficiary || "MARCO ROSSI", paymentRail: "SEPA", currency: "EUR", iban: f.iban || "DE89370400440532013000", bic: f.bic || "COBADEFFXXX", addressLine1: f.address || "Friedrichstra\u00DFe 123", city: f.city || "Berlin", country: "DE", recipientType: "CUSTOMER" }
+            : rail === "FEDWIRE"
+            ? { beneficiaryName: f.beneficiary || "MARCO ROSSI", paymentRail: "FEDWIRE", currency: "USD", accountNumber: f.accountNumber || "214033031443", routingNumber: f.routingNumber || "101019644", addressLine1: f.address || "350 5th Ave", city: f.city || "New York", country: "US", recipientType: "CUSTOMER" }
+            : { beneficiaryName: f.beneficiary || "MARCO ROSSI", paymentRail: "SWIFT", currency: "USD", accountNumber: f.accountNumber || "GB29NWBK60161331926819", bic: f.bic || "NWBKGB2LXXX", bankName: f.bankName || "NatWest Bank", bankAddress: f.bankAddress || "250 Bishopsgate, London EC2M 4AA", bankCountry: f.bankCountry || "GB", addressLine1: f.address || "10 Downing St", city: f.city || "London", country: "GB", recipientType: "CUSTOMER" };
+          const bankResp = WITHDRAWAL_BANK_RESPONSE_BY_RAIL[rail];
+          const bankIdForWebhooks = BANK_ID_BY_RAIL[rail];
           if (errorMode) {
             // Error path: 400 Bad Request
             addApiCall({
@@ -3591,13 +3721,13 @@ export default function ComposeDemo() {
 
         // ─── Rates flow ───
         case "rate-deposit": {
-          const params = new URLSearchParams({ source_currency: "EUR", target_currency: "USDC", source_amount: "1000" });
+          const params = new URLSearchParams({ source_currency: "EUR", target_currency: "USDC", source_amount: "1000", payment_rail: "SEPA" });
           addApiCall({ method: "GET", path: `/api/v2/rates?${params.toString()}`, status: "200 OK", response: RATE_DEPOSIT_PREVIEW });
           markDone("rate-deposit");
           break;
         }
         case "rate-withdrawal": {
-          const params = new URLSearchParams({ source_currency: "USDC", target_currency: "EUR", target_amount: "850" });
+          const params = new URLSearchParams({ source_currency: "USDC", target_currency: "EUR", target_amount: "850", payment_rail: "SEPA" });
           addApiCall({ method: "GET", path: `/api/v2/rates?${params.toString()}`, status: "200 OK", response: RATE_WITHDRAWAL_PREVIEW });
           markDone("rate-withdrawal");
           break;
@@ -3610,7 +3740,7 @@ export default function ComposeDemo() {
         }
       }
     },
-    [addApiCall, addWebhook, markDone, markError, errorMode, depositCurrency, bankCurrency, quoteMode, terminalMode]
+    [addApiCall, addWebhook, markDone, markError, errorMode, depositRail, bankRail, quoteMode, terminalMode]
   );
 
   const handleExecute = useCallback((formData) => {
@@ -3716,7 +3846,7 @@ export default function ComposeDemo() {
       case "wallet": return <WalletPanel onExecute={handleExecute} executed={executed} />;
       case "fees": return <FeesPanel onExecute={handleExecute} executed={executed} />;
       case "get-fees": return <GetFeesPanel onExecute={handleExecute} executed={executed} isError={isError} />;
-      case "deposit": return <DepositPanel onExecute={handleExecute} executed={executed} depositCurrency={depositCurrency} setDepositCurrency={setDepositCurrency} />;
+      case "deposit": return <DepositPanel onExecute={handleExecute} executed={executed} depositRail={depositRail} setDepositRail={setDepositRail} />;
       case "transactions": return <TransactionsPanel onExecute={handleExecute} executed={executed} onSelectTxn={() => { const idx = steps.findIndex((s) => s.id === "txn-detail"); if (idx !== -1) setCurrentStep(idx); }} />;
       case "kyc-submit": return <KycSubmitPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "doc-upload": return <DocUploadPanel onExecute={handleExecute} executed={executed} isError={isError} />;
@@ -3726,7 +3856,7 @@ export default function ComposeDemo() {
       case "va-list": return <VaListPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "va-deposit": return <VaDepositPanel onExecute={handleExecute} executed={executed} />;
       case "wd-list-banks": return <WdListBanksPanel onExecute={handleExecute} executed={executed} isError={isError} />;
-      case "wd-bank": return <WdBankPanel onExecute={handleExecute} executed={executed} isError={isError} bankCurrency={bankCurrency} setBankCurrency={setBankCurrency} />;
+      case "wd-bank": return <WdBankPanel onExecute={handleExecute} executed={executed} isError={isError} bankRail={bankRail} setBankRail={setBankRail} />;
       case "wd-allowance": return <WdAllowancePanel onExecute={handleExecute} executed={executed} />;
       case "wd-create": return <WdCreatePanel onExecute={handleExecute} executed={executed} isError={isError} quoteMode={quoteMode} setQuoteMode={setQuoteMode} />;
       case "wd-status": return <WdStatusPanel onExecute={handleExecute} executed={executed} polling={polling} withdrawalStatus={withdrawalStatus} isError={isError} terminalMode={terminalMode} setTerminalMode={setTerminalMode} />;
