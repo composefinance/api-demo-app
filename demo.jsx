@@ -3909,7 +3909,7 @@ export default function ComposeDemo() {
       {/* Header */}
       <div style={{ borderBottom: `1px solid ${C.border}`, padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img src="/logo-white.png" alt="Compose Finance" style={{ height: 24, width: "auto" }} />
+          <img src={`${import.meta.env.BASE_URL}logo-white.png`} alt="Compose Finance" style={{ height: 24, width: "auto" }} />
           <span style={{ fontSize: 11, color: C.textMuted, padding: "2px 8px", background: C.bgElevated, borderRadius: 4, border: `1px solid ${C.border}`, fontFamily: T.fontMono }}>
             API Demo
           </span>
