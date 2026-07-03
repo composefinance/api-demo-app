@@ -15,12 +15,12 @@ Open [http://localhost:5173](http://localhost:5173).
 
 | Flow | Steps | Endpoints Covered |
 |------|-------|-------------------|
-| **Onboarding** | 14 | Create customer, KYC verification, document upload, wallet setup, deposit details (EUR/USD) |
+| **Onboarding** | 14 | Create customer, KYC verification, document upload, wallet setup, deposit details (SEPA / FEDWIRE / SWIFT rails) |
 | **Virtual Accounts** | 4 | Create virtual account, IBAN assignment, list accounts, deposit simulation |
-| **Withdrawals** | 5 | Add EUR/USD bank, list banks, check allowance, create withdrawal (source or target amount), track status (PROCESSING → PROPOSED → PARTIALLY_SIGNED → COMPLETED, plus FAILED/CANCELLED/EXPIRED in error mode) |
+| **Withdrawals** | 5 | Add SEPA / FEDWIRE / SWIFT bank, list banks, check allowance, create withdrawal (source or target amount), track status (PROCESSING → PROPOSED → PARTIALLY_SIGNED → COMPLETED, plus FAILED/CANCELLED/EXPIRED in error mode) |
 | **Revenue** | 4 | Org balances, developer fee balance, claim fees, transfer confirmation |
 | **Wallets** | 4 | List wallets, get detail, update address, delete wallet |
-| **Rates** | 3 | Indicative deposit quote, withdrawal quote, customer-specific quote |
+| **Rates** | 3 | Indicative deposit quote, withdrawal quote, customer-specific quote (with `developer_fee` breakdown) |
 
 ## Features
 
@@ -34,7 +34,7 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## API Coverage
 
-All 30 endpoints from the Customers API v2 spec (`2026-04-29`) are demonstrated, including:
+All 30 endpoints from the Customers API v2 spec (`2026-07-02`) are demonstrated, including:
 
 - `POST /api/v2/customers` — Create customer
 - `POST /api/v2/customers/{id}/kyc` — Initiate KYC
@@ -43,12 +43,14 @@ All 30 endpoints from the Customers API v2 spec (`2026-04-29`) are demonstrated,
 - `POST /api/v2/customers/{id}/deposit/wallets` — Configure wallets
 - `POST /api/v2/verify-address` — Verify Ethereum address
 - `PATCH /api/v2/customers/{id}/developer-fees` — Set developer fees
-- `GET /api/v2/customers/{id}/deposit?currency=eur|usd` — Get EUR (SEPA) or USD (FedWire) deposit instructions
+- `GET /api/v2/customers/{id}/deposit?paymentRail=SEPA|FEDWIRE|SWIFT` — Get deposit instructions per payment rail
 - `POST /api/v2/customers/{id}/virtual-account` — Create virtual account
-- `POST /api/v2/customers/{id}/withdrawal/banks` — Add EUR (IBAN/BIC) or USD (account/routing) bank
+- `POST /api/v2/customers/{id}/withdrawal/banks` — Add a SEPA (IBAN/BIC), FEDWIRE (account/routing), or SWIFT (account/BIC + bank) bank
 - `POST /api/v2/customers/{id}/withdrawal` — Create withdrawal (`sourceAmount` or `targetAmount`)
 - `GET /api/v2/balances` — Organization balances
-- `GET /api/v2/rates` — Indicative rate quote (EUR↔USDC, EUR↔EURC, USD→USDC)
+- `GET /api/v2/rates` — Indicative rate quote (EUR↔USDC, EUR↔EURC, USD→USDC), optionally per `payment_rail` with a `developer_fee` breakdown
+
+> **Payment rails (spec `2026-07-02`):** withdrawal banks and deposit details are now modeled by payment rail — **SEPA** (EUR), **FEDWIRE** (USD domestic), and **SWIFT** (USD international) — replacing the earlier EUR/USD split. The discriminator is `paymentRail`.
 
 16 webhook event types are simulated across all flows (including `customer.updated`).
 
