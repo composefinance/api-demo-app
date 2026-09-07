@@ -34,7 +34,7 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## API Coverage
 
-All 30 endpoints from the Customers API v2 spec (`2026-07-02`) are demonstrated, including:
+All 30 endpoints from the Customers API v2 spec (`2026-09-03`) are demonstrated, including:
 
 - `POST /api/v2/customers` — Create customer
 - `POST /api/v2/customers/{id}/kyc` — Initiate KYC
@@ -52,7 +52,28 @@ All 30 endpoints from the Customers API v2 spec (`2026-07-02`) are demonstrated,
 
 > **Payment rails (spec `2026-07-02`):** withdrawal banks and deposit details are now modeled by payment rail — **SEPA** (EUR), **FEDWIRE** (USD domestic), and **SWIFT** (USD international) — replacing the earlier EUR/USD split. The discriminator is `paymentRail`.
 
-16 webhook event types are simulated across all flows (including `customer.updated`).
+> **Spec `2026-09-03`:** bank responses carry `fundingSource` (`VIRTUAL_ACCOUNT` or `COMPOSE_SHARED`, which determines the sender name your customer sees) plus a required `postalCode`. USD SWIFT deposits now route through ClearBank and are identified by IBAN rather than an account number.
+
+### Travel Rule
+
+Deposit wallets declare `walletType` (`SELF_CUSTODY` or `CUSTODIAL`, with `vaspName` for the latter) and require `ownershipAttested` on every create and address change. Untick the attestation box in the wallet panel to see the 400.
+
+### Webhooks
+
+16 webhook event types are simulated across all flows (including `customer.updated`). Envelopes are camelCase — `eventId`, `eventType`, `createdAt`, `apiVersion`, `orgId`, `data` — matching what your server actually receives.
+
+Not demonstrated, as no flow triggers them: `customer.enabled`, `customer.disabled`. Note there is no webhook for developer fee claims — poll `GET /api/v2/developer-fees` to confirm a claim settled.
+
+## Linting
+
+```bash
+npm run lint      # ESLint (React + hooks) and a JSX-escape check
+npm run lint:fix  # apply autofixes
+```
+
+`scripts/check-jsx-escapes.mjs` catches `\uXXXX` escapes written into JSX *text*, where they render as literal characters instead of the intended glyph. ESLint does not flag this, and it has reached the rendered page more than once.
+
+`react-hooks/set-state-in-effect` and `exhaustive-deps` are currently set to **warn** rather than error: `demo.jsx` has six pre-existing violations in the autoplay loop and the unread-webhook badge that need a real refactor of those effects. Please burn them down rather than adding to them, then raise both back to `error` in `eslint.config.js`.
 
 ## Tech Stack
 

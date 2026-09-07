@@ -9,6 +9,7 @@ const DEMO_CUSTOMER = {
   name: "MARCO ROSSI",
   accountType: "individual",
   expectedMonthlyVolume: 25000,
+  kycVerified: false,
 };
 
 const KYC_RESPONSE = {
@@ -22,6 +23,18 @@ const CUSTOMER_DETAIL_PENDING = {
   name: "MARCO ROSSI",
   accountType: "individual",
   expectedMonthlyVolume: 25000,
+  // Populated from the verified KYC record once identity checks pass.
+  identity: {
+    nationality: "IT",
+    countryOfResidence: "DE",
+    dateOfBirth: "1990-03-15",
+  },
+  // Which fiat rails this customer can actually use, and whether they are
+  // eligible for a dedicated virtual account rather than shared-reference deposits.
+  banking: {
+    supportedFiatCurrencies: ["EUR", "USD"],
+    supportsVirtualAccountDepositModel: true,
+  },
   kyc: {
     kycVerified: false,
     stepsStatus: "pending",
@@ -32,6 +45,8 @@ const CUSTOMER_DETAIL_PENDING = {
       proofOfAddress: { status: "approved", documentType: "UTILITY_BILL", documentsCount: 1 },
       questionnaire: { status: "uploaded" },
     },
+    // Always present; null unless stepsStatus is "rejected".
+    rejection: null,
   },
 };
 
@@ -49,6 +64,9 @@ const CUSTOMER_DETAIL_APPROVED = {
   },
 };
 
+// Travel Rule: every wallet declares whether it is the customer's own
+// self-custody address or an account at a custodial provider (VASP), and
+// records when the customer last attested ownership.
 const WALLET_RESPONSE = {
   id: "wallet_abc123",
   customerId: "550e8400-e29b-41d4-a716-446655440001",
@@ -56,19 +74,33 @@ const WALLET_RESPONSE = {
   currency: "usdc",
   chain: "base",
   enabled: true,
+  walletType: "SELF_CUSTODY",
+  vaspName: null,
+  vaspAccountRef: null,
+  ownershipAttestedAt: "2026-02-18T10:30:00.000Z",
   createdAt: "2026-02-18T10:30:00.000Z",
   updatedAt: "2026-02-18T10:30:00.000Z",
 };
 
+const WALLET_CREATE_REQUEST = {
+  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68",
+  currency: "usdc",
+  chain: "base",
+  walletType: "SELF_CUSTODY",
+  ownershipAttested: true,
+};
+
+const WALLET_ATTESTATION_REQUIRED = { error: "ownershipAttested is required when registering or re-pointing a wallet" };
+
 // ─── Feature: Wallet Management flow data ───
 const WALLET_LIST_RESPONSE = {
   wallets: [
-    { id: "wallet_abc123", customerId: "550e8400-e29b-41d4-a716-446655440001", address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", currency: "usdc", chain: "base", enabled: true, createdAt: "2026-02-18T10:30:00.000Z", updatedAt: "2026-02-18T10:30:00.000Z" },
-    { id: "wallet_def456", customerId: "550e8400-e29b-41d4-a716-446655440001", address: "0xA91bcd35Cc6634C0532925a3b844Bc9e7595f9A1", currency: "usdc", chain: "base", enabled: false, createdAt: "2026-01-10T08:00:00.000Z", updatedAt: "2026-01-10T08:00:00.000Z" },
+    { id: "wallet_abc123", customerId: "550e8400-e29b-41d4-a716-446655440001", address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", currency: "usdc", chain: "base", enabled: true, walletType: "SELF_CUSTODY", vaspName: null, vaspAccountRef: null, ownershipAttestedAt: "2026-02-18T10:30:00.000Z", createdAt: "2026-02-18T10:30:00.000Z", updatedAt: "2026-02-18T10:30:00.000Z" },
+    { id: "wallet_def456", customerId: "550e8400-e29b-41d4-a716-446655440001", address: "0xA91bcd35Cc6634C0532925a3b844Bc9e7595f9A1", currency: "usdc", chain: "base", enabled: false, walletType: "CUSTODIAL", vaspName: "Kraken", vaspAccountRef: "marco.rossi@example.com", ownershipAttestedAt: "2026-01-10T08:00:00.000Z", createdAt: "2026-01-10T08:00:00.000Z", updatedAt: "2026-01-10T08:00:00.000Z" },
   ],
 };
 const WALLET_SINGLE_RESPONSE = { ...WALLET_RESPONSE };
-const WALLET_UPDATED_RESPONSE = { ...WALLET_RESPONSE, address: "0xNewAddr4B52e8400e29b41d4a716446655440099", updatedAt: "2026-02-19T09:00:00.000Z" };
+const WALLET_UPDATED_RESPONSE = { ...WALLET_RESPONSE, address: "0xNewAddr4B52e8400e29b41d4a716446655440099", ownershipAttestedAt: "2026-02-19T09:00:00.000Z", updatedAt: "2026-02-19T09:00:00.000Z" };
 const WALLET_DELETE_RESPONSE = { success: true, message: "Wallet deleted successfully" };
 const WALLET_LIST_EMPTY = { wallets: [] };
 const WALLET_NOT_FOUND = { error: "Wallet not found" };
@@ -95,9 +127,9 @@ const TXN_NOT_FOUND = { error: "Transaction not found" };
 
 // ─── Feature: List Customers data ───
 const CUSTOMERS_LIST = [
-  { customerId: "550e8400-e29b-41d4-a716-446655440001", email: "marco.rossi@example.com", name: "MARCO ROSSI", accountType: "individual", expectedMonthlyVolume: 25000 },
-  { customerId: "660f9511-f30c-52e5-b827-557766551002", email: "sofia.mueller@example.com", name: "SOFIA MUELLER", accountType: "individual", expectedMonthlyVolume: 10000 },
-  { customerId: "770a0622-a41d-63f6-c938-668877662003", email: "ops@acme-corp.com", name: "ACME CORP", accountType: "business", expectedMonthlyVolume: 100000 },
+  { customerId: "550e8400-e29b-41d4-a716-446655440001", email: "marco.rossi@example.com", name: "MARCO ROSSI", accountType: "individual", expectedMonthlyVolume: 25000, kycVerified: true },
+  { customerId: "660f9511-f30c-52e5-b827-557766551002", email: "sofia.mueller@example.com", name: "SOFIA MUELLER", accountType: "individual", expectedMonthlyVolume: 10000, kycVerified: false },
+  { customerId: "770a0622-a41d-63f6-c938-668877662003", email: "ops@acme-corp.com", name: "ACME CORP", accountType: "corporate", expectedMonthlyVolume: 100000, kycVerified: true },
 ];
 const CUSTOMERS_LIST_EMPTY = [];
 
@@ -121,15 +153,15 @@ const LINKED_WALLET = {
   instructions: "Send USDC to this address to automatically receive funds in your bank account. Minimum: 5 USDC.",
 };
 const WITHDRAWAL_BANKS_LIST = [
-  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", paymentRail: "SEPA", iban: "DE89370400440532013000", bic: "COBADEFFXXX", addressLine1: "Friedrichstraße 123", city: "Berlin", country: "DE", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [LINKED_WALLET] },
-  { id: "bank_u7s6r5q4p3", beneficiaryName: "MARCO ROSSI", paymentRail: "FEDWIRE", accountNumber: "214033031443", routingNumber: "101019644", addressLine1: "350 5th Ave", city: "New York", country: "US", currency: "USD", status: "ACTIVE", createdAt: "2026-03-04T09:15:00.000Z", wallets: [LINKED_WALLET] },
-  { id: "bank_s1w2i3f4t5", beneficiaryName: "MARCO ROSSI", paymentRail: "SWIFT", accountNumber: "GB29NWBK60161331926819", bic: "NWBKGB2LXXX", bankName: "NatWest Bank", bankAddress: "250 Bishopsgate, London EC2M 4AA", bankCountry: "GB", addressLine1: "10 Downing St", city: "London", country: "GB", currency: "USD", status: "PENDING", createdAt: "2026-06-30T14:20:00.000Z", wallets: [] },
+  { id: "bank_d4e5f6a7b8", beneficiaryName: "MARCO ROSSI", paymentRail: "SEPA", fundingSource: "VIRTUAL_ACCOUNT", iban: "DE89370400440532013000", bic: "COBADEFFXXX", addressLine1: "Friedrichstraße 123", city: "Berlin", postalCode: "10117", country: "DE", currency: "EUR", status: "ACTIVE", createdAt: "2026-02-18T11:00:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_u7s6r5q4p3", beneficiaryName: "MARCO ROSSI", paymentRail: "FEDWIRE", fundingSource: "COMPOSE_SHARED", accountNumber: "214033031443", routingNumber: "101019644", addressLine1: "350 5th Ave", city: "New York", postalCode: "10118", country: "US", currency: "USD", status: "ACTIVE", createdAt: "2026-03-04T09:15:00.000Z", wallets: [LINKED_WALLET] },
+  { id: "bank_s1w2i3f4t5", beneficiaryName: "MARCO ROSSI", paymentRail: "SWIFT", fundingSource: "COMPOSE_SHARED", accountNumber: "GB29NWBK60161331926819", bic: "NWBKGB2LXXX", bankName: "NatWest Bank", bankAddress: "250 Bishopsgate, London EC2M 4AA", bankCountry: "GB", addressLine1: "10 Downing St", city: "London", postalCode: "SW1A 2AA", country: "GB", currency: "USD", status: "PENDING", createdAt: "2026-06-30T14:20:00.000Z", wallets: [] },
 ];
 const WITHDRAWAL_BANKS_EMPTY = [];
 
 // ─── Feature: List Virtual Accounts data ───
 const VA_LIST_RESPONSE = [
-  { virtualAccountId: "corr-a8f3k-9xm2p", status: "APPROVED", currency: "EUR", virtualAccount: { iban: "GB82WEST12345698765432", bic: "WESTGB2L", accountName: "MARCO ROSSI", bankName: "ClearBank", bankCountry: "GB" }, createdAt: "2026-02-18T10:45:00.000Z" },
+  { virtualAccountId: "corr-a8f3k-9xm2p", status: "APPROVED", currency: "EUR", virtualAccount: { iban: "GB82WEST12345698765432", bic: "WESTGB2L", accountName: "MARCO ROSSI", bankName: "ClearBank", bankCountry: "GB" }, message: "Virtual account is active", createdAt: "2026-02-18T10:45:00.000Z" },
 ];
 const VA_LIST_EMPTY = [];
 
@@ -147,7 +179,7 @@ const DEPOSIT_DETAILS_SEPA = {
   bankAddress: "1, Place de Metz, L-2954 Luxembourg",
   bankCountry: "Luxembourg",
   depositInstructions: "Transfer EUR from your bank using the reference and bank details below.",
-  warningText: "Include your unique reference in the transfer details",
+  warning: "Include your unique reference in the transfer details",
   thirdPartyEnabled: false,
   depositModel: "reference",
 };
@@ -161,11 +193,12 @@ const DEPOSIT_DETAILS_FEDWIRE = {
   accountAddress: "350 5th Ave, New York, NY 10118, United States",
   accountNumber: "214033031443",
   routingNumber: "101019644",
+  bic: "LEADUS49",
   bankName: "Lead Bank",
   bankAddress: "1801 Main St, Kansas City, MO 64108",
   bankCountry: "United States",
   depositInstructions: "Initiate a FedWire transfer from your US bank using the routing and account numbers below. Include the reference in the wire memo.",
-  warningText: "Include your unique reference in the wire memo",
+  warning: "Include your unique reference in the wire memo",
   thirdPartyEnabled: false,
   depositModel: "reference",
 };
@@ -175,15 +208,15 @@ const DEPOSIT_DETAILS_SWIFT = {
   currency: "usd",
   paymentRail: "SWIFT",
   reference: "A7B3C9D2E1",
-  accountName: "Compose Finance Inc.",
-  accountAddress: "350 5th Ave, New York, NY 10118, United States",
-  accountNumber: "214033031443",
-  bic: "LEADUS33XXX",
-  bankName: "Lead Bank",
-  bankAddress: "1801 Main St, Kansas City, MO 64108",
-  bankCountry: "US",
-  depositInstructions: "Initiate an international SWIFT wire to the account and BIC below. Include the reference in the wire memo. Intermediary bank fees may apply.",
-  warningText: "Include your unique reference in the wire memo",
+  accountName: "Compose Finance Ltd",
+  accountAddress: "2ND FLOOR, STE 201, 343 RAILWAY ST, VANCOUVER, BC V6A 1A4, Canada",
+  bic: "CLRBGB22",
+  iban: "GB34CLRB04287456154412",
+  bankName: "Clearbank Limited",
+  bankAddress: "The Broadgate Tower, Floor 27, 20 Primrose Street, London, EC2A 2EW, United Kingdom",
+  bankCountry: "United Kingdom",
+  depositInstructions: "Initiate an international SWIFT wire to the IBAN and BIC below. Include the reference in the wire memo. Intermediary bank fees may apply.",
+  warning: "Include your unique reference in the wire memo",
   thirdPartyEnabled: false,
   depositModel: "reference",
 };
@@ -264,8 +297,10 @@ const WITHDRAWAL_BANK_RESPONSE_SEPA = {
   bic: "COBADEFFXXX",
   addressLine1: "Friedrichstra\u00DFe 123",
   city: "Berlin",
+  postalCode: "10117",
   country: "DE",
   currency: "EUR",
+  fundingSource: "VIRTUAL_ACCOUNT",
   recipientType: "CUSTOMER",
   recipientEmail: "marco.rossi@example.com",
   notificationEnabled: false,
@@ -283,8 +318,10 @@ const WITHDRAWAL_BANK_RESPONSE_FEDWIRE = {
   routingNumber: "101019644",
   addressLine1: "350 5th Ave",
   city: "New York",
+  postalCode: "10118",
   country: "US",
   currency: "USD",
+  fundingSource: "COMPOSE_SHARED",
   recipientType: "CUSTOMER",
   recipientEmail: "marco.rossi@example.com",
   notificationEnabled: false,
@@ -305,8 +342,10 @@ const WITHDRAWAL_BANK_RESPONSE_SWIFT = {
   bankCountry: "GB",
   addressLine1: "10 Downing St",
   city: "London",
+  postalCode: "SW1A 2AA",
   country: "GB",
   currency: "USD",
+  fundingSource: "COMPOSE_SHARED",
   recipientType: "CUSTOMER",
   recipientEmail: "marco.rossi@example.com",
   notificationEnabled: false,
@@ -339,16 +378,21 @@ const WITHDRAWAL_RESPONSE = {
   paymentRail: "SEPA",
   createdAt: "2026-02-18T12:00:00.000Z",
   completedAt: null,
+  reference: "WD7B3C9D2E",
   sourceCurrency: "USDC",
   targetCurrency: "EUR",
   sourceAmount: "1000",
   targetAmount: "865.50",
   exchangeRate: "0.8655",
   fee: "2.50",
+  // The nested bank summary is itself rail-discriminated.
   withdrawalBank: {
     id: BANK_ID,
     beneficiaryName: "MARCO ROSSI",
+    currency: "EUR",
+    paymentRail: "SEPA",
     iban: "DE89370400440532013000",
+    bic: "COBADEFFXXX",
   },
   walletAddress: null,
   developerFee: null,
@@ -394,15 +438,15 @@ const RATE_CUSTOMER_PREVIEW = {
 };
 
 const WEBHOOK_BASE = {
-  api_version: "v2",
-  org_id: "96884f9b-6ec3-4c1b-8efa-a3ffbda8b960",
+  apiVersion: "v2",
+  orgId: "96884f9b-6ec3-4c1b-8efa-a3ffbda8b960",
 };
 
 function makeWebhook(type, data) {
   return {
-    event_id: `evt_${Math.random().toString(36).slice(2, 10)}`,
-    event_type: type,
-    created_at: new Date().toISOString(),
+    eventId: `evt_${Math.random().toString(36).slice(2, 10)}`,
+    eventType: type,
+    createdAt: new Date().toISOString(),
     ...WEBHOOK_BASE,
     data,
   };
@@ -419,6 +463,13 @@ const KYC_REJECTED_RESPONSE = {
       identity: { status: "rejected", documentType: "PASSPORT", documentsCount: 1 },
       proofOfAddress: { status: "approved", documentType: "UTILITY_BILL", documentsCount: 1 },
       questionnaire: { status: "approved" },
+    },
+    // reviewRejectType is the field that matters: RETRY means the customer can
+    // resubmit, FINAL means the rejection is permanent.
+    rejection: {
+      rejectLabels: ["UNSATISFACTORY_PHOTOS", "DOCUMENT_PAGE_MISSING"],
+      reviewRejectType: "RETRY",
+      clientComment: "Passport photo is cropped \u2014 resubmit with all four corners visible.",
     },
   },
 };
@@ -470,10 +521,24 @@ const VERIFY_ADDRESS_ERROR_RESPONSE = {
 };
 
 // ─── Feature: Organization Balances data ───
-const ORG_BALANCES_RESPONSE = [
-  { currency: "USDC", chain: "base", available: "15420.50", pending: "500.00" },
-];
-const ORG_BALANCES_EMPTY = [];
+const ORG_BALANCES_RESPONSE = {
+  custodial: {
+    balances: [
+      { currency: "usdc", balance: "8200.00", availableBalance: "8050.00", lockedBalance: "150.00" },
+      { currency: "usdt", balance: "1500.00", availableBalance: "1500.00", lockedBalance: "0" },
+    ],
+  },
+  nonCustodial: {
+    address: "0x1234567890abcdef1234567890abcdef12345678",
+    balances: [
+      { currency: "usdc", chain: "base", balance: "15420.50", availableBalance: "14920.50", lockedBalance: "500.00", tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" },
+    ],
+  },
+};
+const ORG_BALANCES_EMPTY = {
+  custodial: { balances: [] },
+  nonCustodial: { address: "0x1234567890abcdef1234567890abcdef12345678", balances: [] },
+};
 
 // ─── Feature: Revenue flow data ───
 const DEV_FEE_BALANCE = {
@@ -481,7 +546,7 @@ const DEV_FEE_BALANCE = {
   pendingClaims: "0",
   availableBalance: "1250.50",
   currencyId: "usdc_base",
-  currencyTicker: "USDC",
+  currency: "USDC",
 };
 
 const DEV_FEE_CLAIM_RESPONSE = {
@@ -491,12 +556,20 @@ const DEV_FEE_CLAIM_RESPONSE = {
   message: "Claim of 1250.50 USDC initiated. Transfer is being processed.",
 };
 
+const DEV_FEE_AFTER_CLAIM = {
+  balance: "0",
+  pendingClaims: "0",
+  availableBalance: "0",
+  currencyId: "usdc_base",
+  currency: "USDC",
+};
+
 const DEV_FEE_NO_BALANCE = {
   balance: "0",
   pendingClaims: "0",
   availableBalance: "0",
   currencyId: "usdc_base",
-  currencyTicker: "USDC",
+  currency: "USDC",
 };
 
 const DEV_FEE_CLAIM_ERROR = {
@@ -508,23 +581,23 @@ const DEV_FEE_CLAIM_ERROR = {
 const STEP_ACTORS = {
   create: [{ from: 0, to: 1, label: "POST /customers", type: "request" }, { from: 1, to: 0, label: "201 Created", type: "response" }, { from: 1, to: 3, label: "customer.created", type: "webhook" }],
   kyc: [{ from: 0, to: 1, label: "POST /kyc", type: "request" }, { from: 1, to: 0, label: "kycFlowLink", type: "response" }],
-  verify: [{ from: 0, to: 1, label: "GET /customers/{id}", type: "request" }, { from: 1, to: 2, label: "check KYC", type: "internal" }, { from: 2, to: 1, label: "approved", type: "internal" }, { from: 1, to: 3, label: "kyc.approved", type: "webhook" }],
+  verify: [{ from: 0, to: 1, label: "GET /customers/{id}", type: "request" }, { from: 1, to: 2, label: "check KYC", type: "internal" }, { from: 2, to: 1, label: "approved", type: "internal" }, { from: 1, to: 3, label: "customer.kyc.approved", type: "webhook" }],
   wallet: [{ from: 0, to: 1, label: "POST /deposit/wallets", type: "request" }, { from: 1, to: 0, label: "201 Created", type: "response" }],
   "verify-addr": [{ from: 0, to: 1, label: "POST /verify-address", type: "request" }, { from: 1, to: 2, label: "chain lookup", type: "internal" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   fees: [{ from: 0, to: 1, label: "PATCH /developer-fees", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   deposit: [{ from: 0, to: 1, label: "GET /deposit", type: "request" }, { from: 1, to: 0, label: "bank details", type: "response" }],
-  transactions: [{ from: 0, to: 1, label: "GET /transactions", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }, { from: 1, to: 3, label: "deposit.completed", type: "webhook" }],
+  transactions: [{ from: 0, to: 1, label: "GET /transactions", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }, { from: 1, to: 3, label: "deposit.status_changed", type: "webhook" }],
   "va-create": [{ from: 0, to: 1, label: "POST /virtual-account", type: "request" }, { from: 1, to: 2, label: "request IBAN", type: "internal" }, { from: 1, to: 0, label: "202 Accepted", type: "response" }],
-  "va-poll": [{ from: 0, to: 1, label: "GET /virtual-account", type: "request" }, { from: 2, to: 1, label: "IBAN assigned", type: "internal" }, { from: 1, to: 3, label: "va.approved", type: "webhook" }],
-  "va-deposit": [{ from: 2, to: 1, label: "EUR received", type: "internal" }, { from: 1, to: 3, label: "deposit.completed", type: "webhook" }],
-  "wd-bank": [{ from: 0, to: 1, label: "POST /withdrawal/banks", type: "request" }, { from: 1, to: 0, label: "201 Created", type: "response" }, { from: 1, to: 3, label: "bank.approved", type: "webhook" }],
+  "va-poll": [{ from: 0, to: 1, label: "GET /virtual-account", type: "request" }, { from: 2, to: 1, label: "IBAN assigned", type: "internal" }, { from: 1, to: 3, label: "virtual_account.approved", type: "webhook" }],
+  "va-deposit": [{ from: 2, to: 1, label: "EUR received", type: "internal" }, { from: 1, to: 3, label: "deposit.status_changed", type: "webhook" }],
+  "wd-bank": [{ from: 0, to: 1, label: "POST /withdrawal/banks", type: "request" }, { from: 1, to: 0, label: "201 Created", type: "response" }, { from: 1, to: 3, label: "withdrawal_bank.approved", type: "webhook" }],
   "wd-allowance": [{ from: 0, to: 1, label: "GET /allowance", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   "wd-create": [{ from: 0, to: 1, label: "POST /withdrawal", type: "request" }, { from: 1, to: 2, label: "init transfer", type: "internal" }, { from: 1, to: 0, label: "201 Created", type: "response" }],
-  "wd-status": [{ from: 2, to: 1, label: "status update", type: "internal" }, { from: 1, to: 3, label: "withdrawal.completed", type: "webhook" }],
+  "wd-status": [{ from: 2, to: 1, label: "status update", type: "internal" }, { from: 1, to: 3, label: "withdrawal.status_changed", type: "webhook" }],
   "org-balances": [{ from: 0, to: 1, label: "GET /balances", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   "rev-balance": [{ from: 0, to: 1, label: "GET /developer-fees", type: "request" }, { from: 1, to: 0, label: "200 balance", type: "response" }],
   "rev-claim": [{ from: 0, to: 1, label: "POST /developer-fees", type: "request" }, { from: 1, to: 0, label: "claim initiated", type: "response" }],
-  "rev-confirm": [{ from: 1, to: 2, label: "process transfer", type: "internal" }, { from: 2, to: 1, label: "completed", type: "internal" }, { from: 1, to: 3, label: "claim.completed", type: "webhook" }],
+  "rev-confirm": [{ from: 1, to: 2, label: "process transfer", type: "internal" }, { from: 2, to: 1, label: "completed", type: "internal" }, { from: 1, to: 0, label: "200 balance", type: "response" }],
   // Wallet Management flow
   "wm-list": [{ from: 0, to: 1, label: "GET /deposit/wallets", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
   "wm-get": [{ from: 0, to: 1, label: "GET /wallets/{id}", type: "request" }, { from: 1, to: 0, label: "200 OK", type: "response" }],
@@ -952,7 +1025,11 @@ function VerifyPanel({ onExecute, executed, polling, isError }) {
   );
 }
 
-function WalletPanel({ onExecute, executed }) {
+function WalletPanel({ onExecute, executed, isError }) {
+  const [walletType, setWalletType] = useState("SELF_CUSTODY");
+  const [vaspName, setVaspName] = useState("Kraken");
+  const [attested, setAttested] = useState(true);
+  const isCustodial = walletType === "CUSTODIAL";
   return (
     <div>
       <h2 style={headingStyle}>Setup Customer Wallet</h2>
@@ -984,20 +1061,84 @@ function WalletPanel({ onExecute, executed }) {
           <div style={{ fontSize: 11, color: C.textMuted }}><span style={{ color: C.accent }}>Token:</span> USDC</div>
         </div>
       </div>
+      {/* Travel Rule: the wallet's custody type and an explicit ownership
+          attestation are required before deposits can be routed to it. */}
+      <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20, marginBottom: 16 }}>
+        <label style={labelStyle}>Wallet Type</label>
+        <div style={{ display: "flex", gap: 8, marginBottom: isCustodial ? 14 : 0 }}>
+          {[
+            { id: "SELF_CUSTODY", label: "Self-custody", note: "customer holds the keys" },
+            { id: "CUSTODIAL", label: "Custodial", note: "account at a VASP" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => !executed && setWalletType(t.id)}
+              disabled={executed}
+              style={{
+                flex: 1, padding: "10px 12px",
+                background: t.id === walletType ? C.accentBg : C.bgApp,
+                border: `1px solid ${t.id === walletType ? C.accentBorder : C.borderLight}`,
+                borderRadius: 8, cursor: executed ? "default" : "pointer",
+                opacity: executed && t.id !== walletType ? 0.5 : 1,
+                textAlign: "center", fontFamily: T.fontSans,
+              }}
+            >
+              <div style={{ color: t.id === walletType ? C.accent : C.textBody, fontSize: 13, fontWeight: 600 }}>{t.label}</div>
+              <div style={{ color: C.textMuted, fontSize: 10, marginTop: 2, fontFamily: T.fontMono }}>{t.note}</div>
+            </button>
+          ))}
+        </div>
+        {isCustodial && (
+          <div>
+            <label style={labelStyle}>VASP Name (required for custodial)</label>
+            <input
+              value={vaspName}
+              onChange={(e) => setVaspName(e.target.value)}
+              placeholder="Kraken"
+              disabled={executed}
+              style={{ ...inputStyle, background: executed ? C.bgElevated : C.bgApp, opacity: executed ? 0.6 : 1, boxSizing: "border-box" }}
+            />
+          </div>
+        )}
+      </div>
+
+      <label
+        style={{
+          display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", marginBottom: 16,
+          background: attested ? C.successBg : C.bgSurface,
+          border: `1px solid ${attested ? C.successBorder : C.borderLight}`,
+          borderRadius: 8, cursor: executed ? "default" : "pointer",
+        }}
+      >
+        <input type="checkbox" checked={attested} disabled={executed} onChange={(e) => setAttested(e.target.checked)} style={{ marginTop: 2, accentColor: C.success }} />
+        <span style={{ color: attested ? C.success : C.textSecondary, fontSize: 12, lineHeight: 1.5 }}>
+          <strong>ownershipAttested</strong> {"\u2014"} confirm this wallet is owned or controlled by the customer. Required on every create and address change.
+        </span>
+      </label>
+
       <div style={{ padding: "10px 14px", background: C.accentBg, border: `1px solid ${C.accentBorder}`, borderRadius: 8, marginBottom: 16 }}>
         <div style={{ color: C.accent, fontSize: 12, lineHeight: 1.5 }}>
           {"\u{1F4A1}"} When your customer deposits EUR, funds are automatically converted to USDC and sent to this wallet. No manual intervention required.
         </div>
       </div>
       {!executed && (
-        <button onClick={onExecute} style={btnStyle}>
+        <button
+          onClick={() => onExecute({ walletType, vaspName: isCustodial ? vaspName : undefined, ownershipAttested: attested })}
+          style={btnStyle}
+        >
           Register Wallet {"\u2192"}
         </button>
       )}
-      {executed && (
+      {executed && !isError && (
         <div style={{ padding: "12px 16px", background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ color: C.success, fontSize: 16 }}>{"\u2713"}</span>
           <span style={{ color: C.success, fontSize: 13, fontWeight: 500 }}>Wallet registered — direct-to-wallet deposits enabled</span>
+        </div>
+      )}
+      {executed && isError && (
+        <div style={{ padding: "12px 16px", background: C.errorBg, border: `1px solid ${C.errorBorder}`, borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: C.error, fontSize: 16 }}>{"\u2717"}</span>
+          <span style={{ color: C.error, fontSize: 13, fontWeight: 500 }}>Rejected {"\u2014"} ownership must be attested before the wallet can receive deposits</span>
         </div>
       )}
     </div>
@@ -1104,7 +1245,7 @@ function DepositPanel({ onExecute, executed, depositRail, setDepositRail }) {
     ],
     SWIFT: [
       { label: "Reference", value: data.reference, highlight: true },
-      { label: "Account Number / IBAN", value: data.accountNumber },
+      { label: "IBAN", value: data.iban },
       { label: "BIC / SWIFT", value: data.bic },
       { label: "Account Name", value: data.accountName },
       { label: "Bank", value: data.bankName },
@@ -1141,7 +1282,7 @@ function DepositPanel({ onExecute, executed, depositRail, setDepositRail }) {
       {executed && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ padding: "12px 16px", background: C.warningBg, border: `1px solid ${C.warningBorder}`, borderRadius: 8 }}>
-            <div style={{ color: C.warning, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>{"\u26A0"} {data.warningText}</div>
+            <div style={{ color: C.warning, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>{"\u26A0"} {data.warning}</div>
           </div>
           <div style={{ background: C.bgSurface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 20 }}>
             {fields.map((f) => (
@@ -1396,7 +1537,7 @@ function ListCustomersPanel({ onExecute, executed, isError }) {
               <div>
                 <div style={{ color: C.textBody, fontSize: 14, fontWeight: 600 }}>{c.name}</div>
                 <div style={{ color: C.textMuted, fontSize: 11, fontFamily: T.fontMono }}>{c.email}</div>
-                <div style={{ color: C.textDisabled, fontSize: 10, fontFamily: T.fontMono, marginTop: 2 }}>{c.accountType} \u00B7 {c.customerId.slice(0, 8)}...</div>
+                <div style={{ color: C.textDisabled, fontSize: 10, fontFamily: T.fontMono, marginTop: 2 }}>{c.accountType} {"\u00B7"} {c.customerId.slice(0, 8)}...</div>
               </div>
               <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 11, background: C.bgElevated, color: C.textMuted, border: `1px solid ${C.borderLight}`, fontFamily: T.fontMono }}>{c.accountType}</span>
             </div>
@@ -1947,12 +2088,56 @@ function WdAllowancePanel({ onExecute, executed }) {
   );
 }
 
+const WITHDRAWAL_SOURCE_CURRENCIES = ["USDC", "USDT", "EURC"];
+
 function WdCreatePanel({ onExecute, executed, isError, quoteMode, setQuoteMode }) {
   const isTarget = quoteMode === "target";
+  const [sourceCurrency, setSourceCurrency] = useState("USDC");
+  // USDC is the only currency held on both balances; USDT and EURC are custodial-only.
+  const custodialOnly = sourceCurrency !== "USDC";
+  const [source, setSource] = useState("wallet");
+  const effectiveSource = custodialOnly ? "custodial" : source;
   return (
     <div>
       <h2 style={headingStyle}>Create Withdrawal</h2>
-      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Convert USDC to EUR and send to the customer's bank account.</p>
+      <p style={{ color: C.textMuted, fontSize: 13, lineHeight: 1.5, margin: "0 0 16px 0" }}>Convert {sourceCurrency} to EUR and send to the customer's bank account.</p>
+      <label style={labelStyle}>Source Currency</label>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        {WITHDRAWAL_SOURCE_CURRENCIES.map((c) => (
+          <button key={c} onClick={() => !executed && setSourceCurrency(c)} disabled={executed} style={{
+            flex: 1, padding: "8px 10px",
+            background: c === sourceCurrency ? C.accentBg : C.bgApp,
+            border: `1px solid ${c === sourceCurrency ? C.accentBorder : C.borderLight}`,
+            borderRadius: 8, color: c === sourceCurrency ? C.accent : C.textBody,
+            fontSize: 12, fontWeight: 600, fontFamily: T.fontMono,
+            cursor: executed ? "default" : "pointer",
+            opacity: executed && c !== sourceCurrency ? 0.5 : 1,
+          }}>{c}</button>
+        ))}
+      </div>
+      <label style={labelStyle}>Balance to Debit</label>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        {["wallet", "custodial"].map((sv) => {
+          const locked = custodialOnly && sv === "wallet";
+          const active = sv === effectiveSource;
+          return (
+            <button key={sv} onClick={() => !executed && !locked && setSource(sv)} disabled={executed || locked} style={{
+              flex: 1, padding: "8px 10px",
+              background: active ? C.accentBg : C.bgApp,
+              border: `1px solid ${active ? C.accentBorder : C.borderLight}`,
+              borderRadius: 8, color: active ? C.accent : C.textBody,
+              fontSize: 12, fontWeight: 600, fontFamily: T.fontMono,
+              cursor: executed || locked ? "default" : "pointer",
+              opacity: locked || (executed && !active) ? 0.4 : 1,
+            }}>{sv}</button>
+          );
+        })}
+      </div>
+      {custodialOnly && (
+        <div style={{ marginBottom: 14, color: C.textMuted, fontSize: 11, lineHeight: 1.5 }}>
+          {sourceCurrency} is held only on the custodial balance, so <code style={{ fontFamily: T.fontMono }}>source</code> is sent as <code style={{ fontFamily: T.fontMono }}>custodial</code>.
+        </div>
+      )}
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
         {[{ id: "source", label: "Specify USDC to send" }, { id: "target", label: "Specify EUR to receive" }].map((opt) => {
           const active = quoteMode === opt.id;
@@ -2010,7 +2195,7 @@ function WdCreatePanel({ onExecute, executed, isError, quoteMode, setQuoteMode }
         </div>
       </div>
       {!executed && (
-        <button onClick={onExecute} style={btnStyle}>
+        <button onClick={() => onExecute({ sourceCurrency, source: effectiveSource })} style={btnStyle}>
           Create Withdrawal {"\u2192"}
         </button>
       )}
@@ -2289,7 +2474,7 @@ function RevClaimPanel({ onExecute, executed, isError }) {
         <div style={{ padding: "12px 16px", background: C.successBg, border: `1px solid ${C.successBorder}`, borderRadius: 8, marginTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <span style={{ color: C.success, fontSize: 16 }}>{"\u2713"}</span>
-            <span style={{ color: C.success, fontSize: 13, fontWeight: 500 }}>Claim initiated \u2014 txn_abc123</span>
+            <span style={{ color: C.success, fontSize: 13, fontWeight: 500 }}>Claim initiated {"\u2014"} txn_abc123</span>
           </div>
           <div style={{ color: C.success, fontSize: 12, opacity: 0.8, marginLeft: 26 }}>1,250.50 USDC transfer is being processed</div>
         </div>
@@ -2940,9 +3125,9 @@ function ApiPanel({ calls, webhooks, onClear }) {
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                   <span style={{ fontSize: 10, padding: "2px 8px", background: "#2d1b4e", color: "#d2a8ff", borderRadius: 4, fontFamily: T.fontMono, fontWeight: 600 }}>WEBHOOK</span>
-                  <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: T.fontMono, fontWeight: 600 }}>{wh.event_type}</span>
+                  <span style={{ color: C.textSecondary, fontSize: 12, fontFamily: T.fontMono, fontWeight: 600 }}>{wh.eventType}</span>
                   <span style={{ color: C.textDisabled, fontSize: 10, marginLeft: "auto", fontFamily: T.fontMono }}>
-                    {new Date(wh.created_at).toLocaleTimeString()}
+                    {new Date(wh.createdAt).toLocaleTimeString()}
                   </span>
                 </div>
                 {/* Feature 3: Copy JSON button on webhook */}
@@ -3163,7 +3348,7 @@ export default function ComposeDemo() {
           });
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("customer.created", { customer_id: DEMO_CUSTOMER.customerId });
+            addWebhook("customer.created", { customerId: DEMO_CUSTOMER.customerId });
           }, 600);
           // Out-of-band dashboard edit — fires customer.updated with the changed fields
           setTimeout(() => {
@@ -3201,7 +3386,7 @@ export default function ComposeDemo() {
                 status: "200 OK",
                 response: KYC_REJECTED_RESPONSE,
               });
-              addWebhook("customer.kyc.rejected", { customer_id: DEMO_CUSTOMER.customerId });
+              addWebhook("customer.kyc.rejected", { customerId: DEMO_CUSTOMER.customerId });
               setPolling(false);
               markError("verify");
               markDone("verify");
@@ -3217,7 +3402,7 @@ export default function ComposeDemo() {
             });
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("customer.kyc.submitted", { customer_id: DEMO_CUSTOMER.customerId, attempt: 1 });
+              addWebhook("customer.kyc.submitted", { customerId: DEMO_CUSTOMER.customerId, attempt: 1 });
             }, 800);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
@@ -3227,14 +3412,14 @@ export default function ComposeDemo() {
                 status: "200 OK",
                 response: CUSTOMER_DETAIL_APPROVED,
               });
-              addWebhook("customer.kyc.approved", { customer_id: DEMO_CUSTOMER.customerId });
+              addWebhook("customer.kyc.approved", { customerId: DEMO_CUSTOMER.customerId });
               setPolling(false);
               markDone("verify");
             }, 3000);
             // After KYC approval, customer auto-upgrades to enhanced level
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("customer.kyc.level_changed", { customer_id: DEMO_CUSTOMER.customerId, previous_level: "customers-api-basic", new_level: "customers-api-enhanced" });
+              addWebhook("customer.kyc.level_changed", { customerId: DEMO_CUSTOMER.customerId, previousLevel: "customers-api-basic", newLevel: "customers-api-enhanced" });
             }, 3800);
           }
           break;
@@ -3250,16 +3435,44 @@ export default function ComposeDemo() {
           }
           break;
 
-        case "wallet":
+        case "wallet": {
+          const isCustodialWallet = formDataRef.current.walletType === "CUSTODIAL";
+          const walletBody = {
+            ...WALLET_CREATE_REQUEST,
+            walletType: formDataRef.current.walletType || "SELF_CUSTODY",
+            ...(isCustodialWallet ? { vaspName: formDataRef.current.vaspName } : {}),
+            // Undefined means autoplay ran this step without visiting the panel;
+            // only an explicit false is the user unticking the box.
+            ownershipAttested: formDataRef.current.ownershipAttested !== false,
+          };
+          // The API rejects the wallet outright unless ownership is attested.
+          if (!walletBody.ownershipAttested) {
+            addApiCall({
+              method: "POST",
+              path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets`,
+              status: "400 Bad Request",
+              body: walletBody,
+              response: WALLET_ATTESTATION_REQUIRED,
+            });
+            markError("wallet");
+            markDone("wallet");
+            break;
+          }
           addApiCall({
             method: "POST",
             path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets`,
             status: "201 Created",
-            body: { address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", currency: "usdc", chain: "base" },
-            response: WALLET_RESPONSE,
+            body: walletBody,
+            response: {
+              ...WALLET_RESPONSE,
+              walletType: walletBody.walletType,
+              vaspName: isCustodialWallet ? walletBody.vaspName : null,
+              vaspAccountRef: null,
+            },
           });
           markDone("wallet");
           break;
+        }
 
         case "fees":
           addApiCall({
@@ -3302,11 +3515,11 @@ export default function ComposeDemo() {
           });
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("deposit.created", { transaction_id: TRANSACTIONS[0].id, customer_id: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
+            addWebhook("deposit.created", { transactionId: TRANSACTIONS[0].id, customerId: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
           }, 500);
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("deposit.status_changed", { transaction_id: TRANSACTIONS[0].id, customer_id: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
+            addWebhook("deposit.status_changed", { transactionId: TRANSACTIONS[0].id, customerId: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
           }, 1200);
           markDone("transactions");
           break;
@@ -3357,7 +3570,7 @@ export default function ComposeDemo() {
           });
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("virtual_account.created", { correlation_id: VIRTUAL_ACCOUNT_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PENDING" });
+            addWebhook("virtual_account.created", { virtualAccountId: VIRTUAL_ACCOUNT_ID, customerId: DEMO_CUSTOMER.customerId, status: "PENDING" });
           }, 600);
           markDone("va-create");
           break;
@@ -3380,7 +3593,7 @@ export default function ComposeDemo() {
                 status: "200 OK",
                 response: VA_REJECTED_RESPONSE,
               });
-              addWebhook("virtual_account.rejected", { correlation_id: VIRTUAL_ACCOUNT_ID, customer_id: DEMO_CUSTOMER.customerId, status: "REJECTED" });
+              addWebhook("virtual_account.rejected", { virtualAccountId: VIRTUAL_ACCOUNT_ID, customerId: DEMO_CUSTOMER.customerId, status: "REJECTED" });
               setPolling(false);
               markError("va-poll");
               markDone("va-poll");
@@ -3402,7 +3615,7 @@ export default function ComposeDemo() {
                 status: "200 OK",
                 response: VA_RESPONSE_APPROVED,
               });
-              addWebhook("virtual_account.approved", { correlation_id: VIRTUAL_ACCOUNT_ID, customer_id: DEMO_CUSTOMER.customerId, status: "APPROVED" });
+              addWebhook("virtual_account.approved", { virtualAccountId: VIRTUAL_ACCOUNT_ID, customerId: DEMO_CUSTOMER.customerId, status: "APPROVED" });
               setPolling(false);
               markDone("va-poll");
             }, 2500);
@@ -3420,17 +3633,29 @@ export default function ComposeDemo() {
           }
           break;
 
-        case "va-deposit":
+        case "va-deposit": {
+          const vaTxnId = "txn_va_" + VIRTUAL_ACCOUNT_ID.slice(-6);
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("deposit.created", { transaction_id: "txn_va_" + VIRTUAL_ACCOUNT_ID.slice(-6), customer_id: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
+            addWebhook("deposit.created", { transactionId: vaTxnId, customerId: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
           }, 500);
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
-            addWebhook("deposit.status_changed", { transaction_id: "txn_va_" + VIRTUAL_ACCOUNT_ID.slice(-6), customer_id: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
-            markDone("va-deposit");
+            addWebhook("deposit.status_changed", { transactionId: vaTxnId, customerId: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
+            if (!errorMode) markDone("va-deposit");
           }, 1500);
+          if (errorMode) {
+            // A settled deposit can still be pulled back by the sending bank \u2014
+            // it lands as a second status_changed with status REVERSED.
+            setTimeout(() => {
+              if (epochRef.current !== epoch) return;
+              addWebhook("deposit.status_changed", { transactionId: vaTxnId, customerId: DEMO_CUSTOMER.customerId, status: "REVERSED" });
+              markError("va-deposit");
+              markDone("va-deposit");
+            }, 2800);
+          }
           break;
+        }
 
         case "wd-bank": {
           const rail = bankRail;
@@ -3455,7 +3680,7 @@ export default function ComposeDemo() {
             // created via 201 is later rejected during async review
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.rejected", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "REJECTED", reason: "Beneficiary name does not match account holder" });
+              addWebhook("withdrawal_bank.rejected", { customerId: DEMO_CUSTOMER.customerId, withdrawalBankId: bankIdForWebhooks, status: "REJECTED" });
             }, 800);
             markError("wd-bank");
             markDone("wd-bank");
@@ -3470,11 +3695,11 @@ export default function ComposeDemo() {
             });
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.created", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "PENDING" });
+              addWebhook("withdrawal_bank.created", { customerId: DEMO_CUSTOMER.customerId, withdrawalBankId: bankIdForWebhooks, status: "PENDING" });
             }, 300);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal_bank.approved", { customer_id: DEMO_CUSTOMER.customerId, withdrawal_bank_id: bankIdForWebhooks, status: "ACTIVE" });
+              addWebhook("withdrawal_bank.approved", { customerId: DEMO_CUSTOMER.customerId, withdrawalBankId: bankIdForWebhooks, status: "ACTIVE" });
               markDone("wd-bank");
             }, 500);
           }
@@ -3503,9 +3728,13 @@ export default function ComposeDemo() {
           break;
 
         case "wd-create": {
+          const wdCurrency = formDataRef.current.sourceCurrency || "USDC";
+          // `source` selects which balance to debit; only send it for the
+          // custodial balance, since `wallet` is the default.
+          const wdSource = formDataRef.current.source === "custodial" ? { source: "custodial" } : {};
           const wdBody = quoteMode === "target"
-            ? { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: "USDC", targetAmount: "865.50" }
-            : { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: "USDC", sourceAmount: "1000" };
+            ? { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: wdCurrency, ...wdSource, targetAmount: "865.50" }
+            : { withdrawalBankId: BANK_ID, idempotencyKey: `wd_${Date.now()}`, sourceCurrency: wdCurrency, ...wdSource, sourceAmount: "1000" };
           if (errorMode) {
             // Error path: 400 Bad Request
             addApiCall({
@@ -3528,7 +3757,7 @@ export default function ComposeDemo() {
             });
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
-              addWebhook("withdrawal.created", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
+              addWebhook("withdrawal.created", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: "PROCESSING" });
             }, 600);
             markDone("wd-create");
           }
@@ -3543,12 +3772,12 @@ export default function ComposeDemo() {
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("PROPOSED");
-              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
+              addWebhook("withdrawal.status_changed", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
             }, 1200);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus(terminalMode);
-              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: terminalMode });
+              addWebhook("withdrawal.status_changed", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: terminalMode });
               setPolling(false);
               markError("wd-status");
               markDone("wd-status");
@@ -3560,17 +3789,17 @@ export default function ComposeDemo() {
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("PROPOSED");
-              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
+              addWebhook("withdrawal.status_changed", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: "PROPOSED" });
             }, 1200);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("PARTIALLY_SIGNED");
-              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "PARTIALLY_SIGNED" });
+              addWebhook("withdrawal.status_changed", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: "PARTIALLY_SIGNED" });
             }, 2200);
             setTimeout(() => {
               if (epochRef.current !== epoch) return;
               setWithdrawalStatus("COMPLETED");
-              addWebhook("withdrawal.status_changed", { transaction_id: WITHDRAWAL_TXN_ID, customer_id: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
+              addWebhook("withdrawal.status_changed", { transactionId: WITHDRAWAL_TXN_ID, customerId: DEMO_CUSTOMER.customerId, status: "COMPLETED" });
               setPolling(false);
               markDone("wd-status");
             }, 3200);
@@ -3658,12 +3887,19 @@ export default function ComposeDemo() {
           break;
 
         case "rev-confirm":
+          // Fee claims emit no webhook \u2014 poll GET /api/v2/developer-fees to confirm
+          // the claim settled (availableBalance drops once the transfer completes).
           setPolling(true);
           setClaimStatus("PROCESSING");
           setTimeout(() => {
             if (epochRef.current !== epoch) return;
             setClaimStatus("COMPLETED");
-            addWebhook("developer_fees.claimed", { amount: "1250.50", currency: "USDC", transaction_id: "txn_abc123" });
+            addApiCall({
+              method: "GET",
+              path: "/api/v2/developer-fees",
+              status: "200 OK",
+              response: DEV_FEE_AFTER_CLAIM,
+            });
             setPolling(false);
             markDone("rev-confirm");
           }, 2000);
@@ -3696,12 +3932,14 @@ export default function ComposeDemo() {
 
         case "wm-update": {
           const walletAddr = formDataRef.current.newAddress || "0xNewAddr4B52e8400e29b41d4a716446655440099";
+          // Re-pointing a wallet at a new address requires a fresh attestation.
+          const updateBody = { address: walletAddr, ownershipAttested: true };
           if (errorMode) {
-            addApiCall({ method: "PATCH", path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets/wallet_abc123`, status: "409 Conflict", body: { address: walletAddr }, response: WALLET_ADDR_CONFLICT });
+            addApiCall({ method: "PATCH", path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets/wallet_abc123`, status: "409 Conflict", body: updateBody, response: WALLET_ADDR_CONFLICT });
             markError("wm-update");
             markDone("wm-update");
           } else {
-            addApiCall({ method: "PATCH", path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets/wallet_abc123`, status: "200 OK", body: { address: walletAddr }, response: WALLET_UPDATED_RESPONSE });
+            addApiCall({ method: "PATCH", path: `/api/v2/customers/${DEMO_CUSTOMER.customerId}/deposit/wallets/wallet_abc123`, status: "200 OK", body: updateBody, response: WALLET_UPDATED_RESPONSE });
             markDone("wm-update");
           }
           break;
@@ -3843,7 +4081,7 @@ export default function ComposeDemo() {
       case "create": return <CreateCustomerPanel onExecute={handleExecute} executed={executed} />;
       case "kyc": return <KycPanel onExecute={handleExecute} executed={executed} />;
       case "verify": return <VerifyPanel onExecute={handleExecute} executed={executed} polling={polling} isError={isError} />;
-      case "wallet": return <WalletPanel onExecute={handleExecute} executed={executed} />;
+      case "wallet": return <WalletPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "fees": return <FeesPanel onExecute={handleExecute} executed={executed} />;
       case "get-fees": return <GetFeesPanel onExecute={handleExecute} executed={executed} isError={isError} />;
       case "deposit": return <DepositPanel onExecute={handleExecute} executed={executed} depositRail={depositRail} setDepositRail={setDepositRail} />;
